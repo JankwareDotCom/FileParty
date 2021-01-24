@@ -68,5 +68,43 @@ namespace FileParty.Handlers.AWS.S3.Tests
 
             Assert.False(await _storageProvider.ExistsAsync(storagePointer));
         }
+        
+        [Fact]
+        public async Task DeleteEntireDirectory()
+        {
+            await using var inputStream = new MemoryStream();
+            await using var inputWriter = new StreamWriter(inputStream);
+            await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
+            await inputWriter.FlushAsync();
+            inputStream.Position = 0;
+
+            var storagePointerPrefix =
+                "dir2" +
+                S3StorageProvider.DirectorySeparator +
+                "file_";
+
+            for (var i = 0; i < 10; i++)
+            {
+                var storagePointer = storagePointerPrefix + i;
+                var stream = new MemoryStream();
+                await inputStream.CopyToAsync(stream);
+                
+                await _storageProvider.WriteAsync(
+                    storagePointer,
+                    stream,
+                    WriteMode.Create);
+
+                inputStream.Position = 0;
+                
+                Assert.True(await _storageProvider.ExistsAsync(storagePointer));
+            }
+
+            Assert.True(_storageProvider.TryGetStoredItemType("dir2", out var type));
+            Assert.Equal(StoredItemType.Directory, type);
+            
+            await _storageProvider.DeleteAsync("dir2");
+
+            Assert.False(await _storageProvider.ExistsAsync("dir2"));
+        }
     }
 }
