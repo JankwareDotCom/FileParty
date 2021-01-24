@@ -1,0 +1,255 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Amazon.S3.Transfer;
+using FileParty.Core.Enums;
+using FileParty.Core.EventArgs;
+using FileParty.Core.Exceptions;
+using FileParty.Core.Interfaces;
+using FileParty.Core.Models;
+using FileParty.Providers.AWS.S3.Config;
+
+namespace FileParty.Providers.AWS.S3
+{
+    public class S3StorageProvider : IStorageProvider
+    {
+        public const char DirectorySeparator = '/';
+        private string _awsAccessKeyId;
+        private string _awsAccessKeySecret;
+        private AWSBucketInformation _bucketInfo;
+        private string _credentialType;
+
+        public S3StorageProvider(
+            string awsAccessKeyId,
+            string awsAccessKeySecret,
+            AWSBucketInformation bucketInformation)
+        {
+            _awsAccessKeyId = awsAccessKeyId;
+            _awsAccessKeySecret = awsAccessKeySecret;
+            _bucketInfo = bucketInformation;
+            _credentialType = nameof(AWSAccessKeyConfiguration);
+        }
+
+        public S3StorageProvider(
+            AWSAccessKeyConfiguration awsAccessKeyConfiguration)
+            : this(
+                awsAccessKeyConfiguration.AccessKey,
+                awsAccessKeyConfiguration.SecretKey,
+                awsAccessKeyConfiguration)
+        {
+        }
+
+        public void Dispose()
+        {
+            _bucketInfo = null;
+            _awsAccessKeyId = null;
+            _awsAccessKeySecret = null;
+            _credentialType = null;
+        }
+
+        public async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
+            CancellationToken cancellationToken = default)
+        {
+            if (await ExistsAsync(storagePointer, cancellationToken) && writeMode == WriteMode.Create)
+                throw Errors.FileAlreadyExistsException;
+
+            var transferRequest = new TransferUtilityUploadRequest
+            {
+                BucketName = _bucketInfo.Name,
+                InputStream = stream,
+                Key = storagePointer
+            };
+
+            if (WriteProgressEvent != null)
+                transferRequest.UploadProgressEvent += (_, args) =>
+                {
+                    WriteProgressEvent.Invoke(this, new WriteProgressEventArgs
+                    {
+                        StoragePointer = storagePointer,
+                        TotalBytesTransferred = args.TransferredBytes,
+                        TotalBytesRemaining = stream.Length - args.TransferredBytes,
+                        TotalFileBytes = stream.Length,
+                        PercentComplete = args.PercentDone
+                    });
+                };
+
+            var creds = GetAmazonCredentials();
+            using var s3Client = new AmazonS3Client(creds, _bucketInfo.GetRegionEndpoint());
+            using var transferUtility = new TransferUtility(s3Client);
+            await transferUtility.UploadAsync(transferRequest, cancellationToken);
+        }
+
+        public async Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
+        {
+            // check if exists / throw
+            await GetInformation(storagePointer, cancellationToken);
+
+            var getRequest = new GetObjectRequest
+            {
+                BucketName = _bucketInfo.Name,
+                Key = storagePointer
+            };
+
+            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
+            using var response = await s3Client.GetObjectAsync(getRequest, cancellationToken);
+            await using var responseStream = response.ResponseStream;
+            return responseStream;
+        }
+
+        public async Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
+        {
+            await GetInformation(storagePointer, cancellationToken);
+
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = _bucketInfo.Name,
+                Key = storagePointer
+            };
+
+            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
+            await s3Client.DeleteObjectAsync(deleteRequest, cancellationToken);
+        }
+
+        public async Task DeleteAsync(IEnumerable<string> storagePointers,
+            CancellationToken cancellationToken = default)
+        {
+            var spArray = storagePointers as string[] ?? storagePointers.ToArray();
+
+            if (spArray.Length == 0) return;
+
+            foreach (var storagePointer in spArray) await GetInformation(storagePointer, cancellationToken);
+
+            var deleteRequest = new DeleteObjectsRequest
+            {
+                BucketName = _bucketInfo.Name,
+                Objects = spArray.Select(s => new KeyVersion {Key = s}).ToList()
+            };
+
+            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
+            await s3Client.DeleteObjectsAsync(deleteRequest, cancellationToken);
+        }
+
+        public async Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await GetInformation(storagePointer, cancellationToken);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
+            CancellationToken cancellationToken = default)
+        {
+            IDictionary<string, bool> result = storagePointers
+                .ToDictionary(
+                    k => k,
+                    v => ExistsAsync(v, cancellationToken).Result);
+
+            return Task.FromResult(result);
+        }
+
+        public bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
+        {
+            type = null;
+            try
+            {
+                var info = GetInformation(storagePointer).Result;
+                type = info.StoredType;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<IStoredItemInformation> GetInformation(string storagePointer,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
+
+                var result = new StoredItemInformation();
+
+
+                try
+                {
+                    var omInfo = await s3Client
+                        .GetObjectMetadataAsync(_bucketInfo.Name, storagePointer, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    result.StoredType = StoredItemType.File;
+                    result.Size = omInfo.ContentLength;
+                    result.LastModifiedTimestamp = omInfo.LastModified.ToUniversalTime();
+                    result.StoragePointer = storagePointer;
+                }
+                catch (AmazonS3Exception s3Exception) when (s3Exception.StatusCode == HttpStatusCode.NotFound)
+                {
+                    storagePointer = storagePointer.EndsWith(DirectorySeparator)
+                        ? storagePointer
+                        : storagePointer + DirectorySeparator;
+
+                    var loInfo = await s3Client
+                        .ListObjectsAsync(_bucketInfo.Name, storagePointer, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    if (!loInfo.S3Objects.Any()) throw;
+
+                    result.StoredType = StoredItemType.Directory;
+                    result.Size = null;
+                }
+
+                var pathParts =
+                    storagePointer
+                        .Split(DirectorySeparator, StringSplitOptions.RemoveEmptyEntries)
+                        .ToList();
+
+                var name = pathParts.Last();
+                pathParts.Remove(name);
+                var dirPath = string.Join(DirectorySeparator, pathParts);
+
+                if (result.StoredType == StoredItemType.Directory) name += DirectorySeparator;
+
+                result.DirectoryPath = dirPath;
+                result.Name = name;
+                result.CreatedTimestamp = null;
+
+                return result;
+            }
+            catch (AmazonS3Exception s3Exception) when (s3Exception.StatusCode == HttpStatusCode.NotFound)
+            {
+                throw Errors.FileNotFoundException;
+            }
+            catch (Exception)
+            {
+                throw Errors.UnknownException;
+            }
+        }
+
+        public event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
+
+        private AWSCredentials GetAmazonCredentials()
+        {
+            return _credentialType switch
+            {
+                nameof(AWSAccessKeyConfiguration) =>
+                    new BasicAWSCredentials(_awsAccessKeyId, _awsAccessKeySecret),
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(S3StorageProvider), "Invalid authentication scheme.")
+            };
+        }
+    }
+}
