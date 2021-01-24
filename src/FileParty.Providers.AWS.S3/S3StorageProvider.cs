@@ -105,7 +105,7 @@ namespace FileParty.Providers.AWS.S3
 
         public async Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
-            await GetInformation(storagePointer, cancellationToken);
+            var info = await GetInformation(storagePointer, cancellationToken);
 
             var deleteRequest = new DeleteObjectRequest
             {
@@ -114,7 +114,34 @@ namespace FileParty.Providers.AWS.S3
             };
 
             using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
-            await s3Client.DeleteObjectAsync(deleteRequest, cancellationToken);
+
+            if (info.StoredType == StoredItemType.File)
+            {
+                await s3Client.DeleteObjectAsync(deleteRequest, cancellationToken);
+            }
+            else
+            {
+                var prefix = storagePointer.EndsWith(DirectorySeparator)
+                    ? storagePointer
+                    : storagePointer + DirectorySeparator;
+
+                while (true)
+                {
+                    var directoryContents = await s3Client
+                        .ListObjectsV2Async(new ListObjectsV2Request
+                        {
+                            BucketName = _bucketInfo.Name,
+                            MaxKeys = 1000,
+                            Prefix = prefix,
+
+                        }, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    if (!directoryContents.S3Objects.Any()) break;
+
+                    await DeleteAsync(directoryContents.S3Objects.Select(s => s.Key).ToArray(), cancellationToken);
+                }
+            }
         }
 
         public async Task DeleteAsync(IEnumerable<string> storagePointers,
@@ -124,16 +151,45 @@ namespace FileParty.Providers.AWS.S3
 
             if (spArray.Length == 0) return;
 
-            foreach (var storagePointer in spArray) await GetInformation(storagePointer, cancellationToken);
+            var storagePointerTypeDict = spArray.ToDictionary(
+                s => s,
+                s => TryGetStoredItemType(s, out var type) ? type : null);
 
             var deleteRequest = new DeleteObjectsRequest
             {
                 BucketName = _bucketInfo.Name,
-                Objects = spArray.Select(s => new KeyVersion {Key = s}).ToList()
+                Objects = storagePointerTypeDict
+                    .Where(w=>w.Value == StoredItemType.File)
+                    .Select(s => new KeyVersion {Key = s.Key})
+                    .ToList()
             };
-
             using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
             await s3Client.DeleteObjectsAsync(deleteRequest, cancellationToken);
+
+            foreach (var dir in storagePointerTypeDict
+                .Where(w => w.Value == StoredItemType.Directory))
+            {
+                var prefix = dir.Key.EndsWith(DirectorySeparator)
+                    ? dir.Key
+                    : dir.Key + DirectorySeparator;
+                
+                while (true)
+                {
+                    var directoryContents = await s3Client
+                        .ListObjectsV2Async(new ListObjectsV2Request
+                        {
+                            BucketName = _bucketInfo.Name,
+                            MaxKeys = 1000,
+                            Prefix = prefix,
+
+                        }, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    if (!directoryContents.S3Objects.Any()) break;
+
+                    await DeleteAsync(directoryContents.S3Objects.Select(s => s.Key).ToArray(), cancellationToken);
+                }
+            }
         }
 
         public async Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
