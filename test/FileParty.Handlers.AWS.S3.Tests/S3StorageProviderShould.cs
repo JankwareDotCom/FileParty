@@ -20,8 +20,7 @@ namespace FileParty.Handlers.AWS.S3.Tests
             Region = Environment.GetEnvironmentVariable("fileparty_s3_region"), // e.g. "us-east-1"
             Name = Environment.GetEnvironmentVariable("fileparty_s3_bucket"),
             AccessKey = Environment.GetEnvironmentVariable("fileparty_s3_access_key"),
-            SecretKey =
-                Environment.GetEnvironmentVariable("fileparty_s3_secret_key")
+            SecretKey = Environment.GetEnvironmentVariable("fileparty_s3_secret_key")
         };
 
         public S3StorageProviderShould()
@@ -40,7 +39,7 @@ namespace FileParty.Handlers.AWS.S3.Tests
 
             var storagePointer =
                 "dir" +
-                S3StorageProvider.DirectorySeparator +
+                _storageProvider.DirectorySeparatorCharacter +
                 nameof(CreateAFile_CheckIfFileExists_GetFileInfo_DeleteExistingFile);
 
             _storageProvider.WriteProgressEvent += (_, args) =>
@@ -80,7 +79,7 @@ namespace FileParty.Handlers.AWS.S3.Tests
 
             var storagePointerPrefix =
                 "dir2" +
-                S3StorageProvider.DirectorySeparator +
+                _storageProvider.DirectorySeparatorCharacter +
                 "file_";
 
             for (var i = 0; i < 10; i++)

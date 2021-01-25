@@ -14,6 +14,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileParty.Providers.AWS.S3"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileParty.Handlers.AWS.S3.Tests", "test\FileParty.Handlers.AWS.S3.Tests\FileParty.Handlers.AWS.S3.Tests.csproj", "{E557D9D3-A8B9-4D31-BD7A-631C13025ABA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "misc", "misc", "{7CF1109E-34E6-45B0-98C5-8C6D25FD78AE}"
+ProjectSection(SolutionItems) = preProject
+	.gitignore = .gitignore
+	LICENSE = LICENSE
+	README.md = README.md
+EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -20,39 +20,24 @@ namespace FileParty.Providers.AWS.S3
 {
     public class S3StorageProvider : IStorageProvider
     {
-        public const char DirectorySeparator = '/';
-        private string _awsAccessKeyId;
-        private string _awsAccessKeySecret;
-        private AWSBucketInformation _bucketInfo;
-        private string _credentialType;
+        
+        private string _configType;
+        private readonly AWSAccessKeyConfiguration _accessKeyConfig;
+        private readonly AWSBucketInformation _bucketInfo;
 
-        public S3StorageProvider(
-            string awsAccessKeyId,
-            string awsAccessKeySecret,
-            AWSBucketInformation bucketInformation)
+        public S3StorageProvider(AWSAccessKeyConfiguration awsAccessKeyConfiguration)
         {
-            _awsAccessKeyId = awsAccessKeyId;
-            _awsAccessKeySecret = awsAccessKeySecret;
-            _bucketInfo = bucketInformation;
-            _credentialType = nameof(AWSAccessKeyConfiguration);
-        }
-
-        public S3StorageProvider(
-            AWSAccessKeyConfiguration awsAccessKeyConfiguration)
-            : this(
-                awsAccessKeyConfiguration.AccessKey,
-                awsAccessKeyConfiguration.SecretKey,
-                awsAccessKeyConfiguration)
-        {
+            _configType = nameof(AWSAccessKeyConfiguration);
+            _accessKeyConfig = awsAccessKeyConfiguration;
+            _bucketInfo = awsAccessKeyConfiguration;
         }
 
         public void Dispose()
         {
-            _bucketInfo = null;
-            _awsAccessKeyId = null;
-            _awsAccessKeySecret = null;
-            _credentialType = null;
+            _configType = null;
         }
+
+        public char DirectorySeparatorCharacter { get; } = '/';
 
         public async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
             CancellationToken cancellationToken = default)
@@ -121,9 +106,9 @@ namespace FileParty.Providers.AWS.S3
             }
             else
             {
-                var prefix = storagePointer.EndsWith(DirectorySeparator)
+                var prefix = storagePointer.EndsWith(DirectorySeparatorCharacter)
                     ? storagePointer
-                    : storagePointer + DirectorySeparator;
+                    : storagePointer + DirectorySeparatorCharacter;
 
                 while (true)
                 {
@@ -169,9 +154,9 @@ namespace FileParty.Providers.AWS.S3
             foreach (var dir in storagePointerTypeDict
                 .Where(w => w.Value == StoredItemType.Directory))
             {
-                var prefix = dir.Key.EndsWith(DirectorySeparator)
+                var prefix = dir.Key.EndsWith(DirectorySeparatorCharacter)
                     ? dir.Key
-                    : dir.Key + DirectorySeparator;
+                    : dir.Key + DirectorySeparatorCharacter;
                 
                 while (true)
                 {
@@ -254,9 +239,9 @@ namespace FileParty.Providers.AWS.S3
                 }
                 catch (AmazonS3Exception s3Exception) when (s3Exception.StatusCode == HttpStatusCode.NotFound)
                 {
-                    storagePointer = storagePointer.EndsWith(DirectorySeparator)
+                    storagePointer = storagePointer.EndsWith(DirectorySeparatorCharacter)
                         ? storagePointer
-                        : storagePointer + DirectorySeparator;
+                        : storagePointer + DirectorySeparatorCharacter;
 
                     var loInfo = await s3Client
                         .ListObjectsAsync(_bucketInfo.Name, storagePointer, cancellationToken)
@@ -270,14 +255,14 @@ namespace FileParty.Providers.AWS.S3
 
                 var pathParts =
                     storagePointer
-                        .Split(DirectorySeparator, StringSplitOptions.RemoveEmptyEntries)
+                        .Split(DirectorySeparatorCharacter, StringSplitOptions.RemoveEmptyEntries)
                         .ToList();
 
                 var name = pathParts.Last();
                 pathParts.Remove(name);
-                var dirPath = string.Join(DirectorySeparator, pathParts);
+                var dirPath = string.Join(DirectorySeparatorCharacter, pathParts);
 
-                if (result.StoredType == StoredItemType.Directory) name += DirectorySeparator;
+                if (result.StoredType == StoredItemType.Directory) name += DirectorySeparatorCharacter;
 
                 result.DirectoryPath = dirPath;
                 result.Name = name;
@@ -299,10 +284,10 @@ namespace FileParty.Providers.AWS.S3
 
         private AWSCredentials GetAmazonCredentials()
         {
-            return _credentialType switch
+            return _configType switch
             {
                 nameof(AWSAccessKeyConfiguration) =>
-                    new BasicAWSCredentials(_awsAccessKeyId, _awsAccessKeySecret),
+                    new BasicAWSCredentials(_accessKeyConfig.AccessKey, _accessKeyConfig.SecretKey),
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(S3StorageProvider), "Invalid authentication scheme.")
             };

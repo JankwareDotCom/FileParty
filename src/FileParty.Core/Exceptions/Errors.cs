@@ -13,5 +13,8 @@
 
         public static readonly StorageException MustBeFile =
             new StorageException("FP-003", "The request must be for a file.");
+
+        public static readonly StorageException StoragePointerMustHaveValue =
+            new StorageException("FP-004", "The storage pointer cannot be null or empty");
     }
 }

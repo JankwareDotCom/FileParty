@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using FileParty.Core;
 using FileParty.Core.Enums;
 using FileParty.Core.Exceptions;
 using FileParty.Core.Interfaces;
@@ -21,7 +22,11 @@ namespace FileParty.Providers.FileSystem.Tests
 
         public FileSystemStorageProviderShould()
         {
-            _storageProvider = new FileSystemStorageProvider();
+            _storageProvider = FilePartyProviderFactory.CreateStorageProvider(
+                new FileSystemConfiguration(_baseDirectory)
+                    .UseDirectorySeparationCharacter(Path.DirectorySeparatorChar)
+                );
+            
             if (Directory.Exists(_baseDirectory)) Directory.Delete(_baseDirectory, true);
             Directory.CreateDirectory(_baseDirectory);
         }
@@ -35,8 +40,8 @@ namespace FileParty.Providers.FileSystem.Tests
         [Fact]
         public async Task DetermineIfFileExists()
         {
-            var filePath = $"{_baseDirectory}{Guid.NewGuid()}.txt";
-            await using var fs = File.Create(filePath);
+            var filePath = $"{Guid.NewGuid()}.txt";
+            await using var fs = File.Create(_baseDirectory + filePath);
             Assert.True(await _storageProvider.ExistsAsync(filePath));
             Assert.False(await _storageProvider.ExistsAsync(filePath + "nope"));
         }
@@ -44,7 +49,8 @@ namespace FileParty.Providers.FileSystem.Tests
         [Fact]
         public async Task DetermineIfDirectoryExists()
         {
-            var directoryPath = $"{_baseDirectory}{Guid.NewGuid()}";
+            var directoryPath = $"{Guid.NewGuid()}";
+            Directory.CreateDirectory(_baseDirectory + directoryPath);
             Assert.True(await _storageProvider.ExistsAsync(directoryPath));
             Assert.False(await _storageProvider.ExistsAsync(directoryPath + "nope"));
         }
@@ -52,9 +58,10 @@ namespace FileParty.Providers.FileSystem.Tests
         [Fact]
         public async Task DetermineStoredItemType()
         {
-            var filePath = $"{_baseDirectory}{Guid.NewGuid()}.txt";
-            var directoryPath = $"{_baseDirectory}{Guid.NewGuid()}";
-            await using var fs = File.Create(filePath);
+            var filePath = $"{Guid.NewGuid()}.txt";
+            var directoryPath = $"{Guid.NewGuid()}";
+            await using var fs = File.Create(_baseDirectory + filePath);
+            Directory.CreateDirectory(_baseDirectory + directoryPath);
 
             Assert.True(_storageProvider.TryGetStoredItemType(filePath, out var fileType));
             Assert.True(_storageProvider.TryGetStoredItemType(directoryPath, out var dirType));
@@ -73,7 +80,7 @@ namespace FileParty.Providers.FileSystem.Tests
             await inputWriter.FlushAsync();
             inputStream.Position = 0;
 
-            var filePath = $"{_baseDirectory}{Guid.NewGuid()}";
+            var filePath = $"{Guid.NewGuid()}";
 
             if (File.Exists(filePath)) File.Delete(filePath);
 
@@ -100,7 +107,7 @@ namespace FileParty.Providers.FileSystem.Tests
             await inputWriter.FlushAsync();
             inputStream.Position = 0;
 
-            var filePath = $"{_baseDirectory}{Guid.NewGuid()}";
+            var filePath = $"{Guid.NewGuid()}";
 
             if (File.Exists(filePath)) File.Delete(filePath);
 
@@ -131,7 +138,7 @@ namespace FileParty.Providers.FileSystem.Tests
             await inputWriter.FlushAsync();
             inputStream.Position = 0;
 
-            var filePath = $"{_baseDirectory}{Guid.NewGuid()}";
+            var filePath = $"{Guid.NewGuid()}";
 
             if (File.Exists(filePath)) File.Delete(filePath);
 
@@ -151,7 +158,7 @@ namespace FileParty.Providers.FileSystem.Tests
                 replacementStream,
                 WriteMode.Replace);
 
-            var fileContents = await File.ReadAllTextAsync(filePath);
+            var fileContents = await File.ReadAllTextAsync(_baseDirectory + filePath);
 
             Assert.True(fileContents.All(x => x == 'x'));
         }
@@ -165,9 +172,9 @@ namespace FileParty.Providers.FileSystem.Tests
             await inputWriter.FlushAsync();
             inputStream.Position = 0;
 
-            var filePath = $"{_baseDirectory}{Guid.NewGuid()}";
+            var filePath = $"{Guid.NewGuid()}";
 
-            if (File.Exists(filePath)) File.Delete(filePath);
+            if (File.Exists(_baseDirectory + filePath)) File.Delete(_baseDirectory + filePath);
 
             await _storageProvider.WriteAsync(
                 filePath,
@@ -188,7 +195,7 @@ namespace FileParty.Providers.FileSystem.Tests
                     WriteMode.Create);
             });
 
-            var fileContents = await File.ReadAllTextAsync(filePath);
+            var fileContents = await File.ReadAllTextAsync(_baseDirectory + filePath);
 
             Assert.False(fileContents.All(x => x == 'x'));
             Assert.Equal(Errors.FileAlreadyExistsException.Message, error.Message);
@@ -203,7 +210,7 @@ namespace FileParty.Providers.FileSystem.Tests
             await inputWriter.FlushAsync();
             inputStream.Position = 0;
 
-            var filePath = $"{_baseDirectory}{Guid.NewGuid()}";
+            var filePath = $"{Guid.NewGuid()}";
             await _storageProvider.WriteAsync(filePath, inputStream, WriteMode.CreateOrReplace);
 
             Assert.True(await _storageProvider.ExistsAsync(filePath));
@@ -216,8 +223,8 @@ namespace FileParty.Providers.FileSystem.Tests
         [Fact]
         public async Task DeleteADirectory()
         {
-            var dirPath = $"{_baseDirectory}{Guid.NewGuid()}";
-            Directory.CreateDirectory(dirPath);
+            var dirPath = $"{Guid.NewGuid()}";
+            Directory.CreateDirectory(_baseDirectory + dirPath);
 
             Assert.True(await _storageProvider.ExistsAsync(dirPath));
 
@@ -229,7 +236,7 @@ namespace FileParty.Providers.FileSystem.Tests
         [Fact]
         public async Task RaiseErrorWhenTryingToDeleteAThingThatDoesNotExist()
         {
-            var path = $"{_baseDirectory}{Guid.NewGuid()}";
+            var path = $"{Guid.NewGuid()}";
 
             Assert.False(await _storageProvider.ExistsAsync(path));
 
@@ -246,7 +253,7 @@ namespace FileParty.Providers.FileSystem.Tests
             inputStream.Position = 0;
 
             var name = Guid.NewGuid().ToString();
-            var filePath = $"{_baseDirectory}{name}";
+            var filePath = $"{name}";
 
             if (File.Exists(filePath)) File.Delete(filePath);
 

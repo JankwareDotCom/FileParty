@@ -14,14 +14,47 @@ namespace FileParty.Providers.FileSystem
 {
     public class FileSystemStorageProvider : IStorageProvider
     {
+        public FileSystemStorageProvider(FileSystemConfiguration config)
+        {
+            DirectorySeparatorCharacter = config.DirectorySeparationCharacter;
+            BasePath = config.BasePath.TrimEnd(DirectorySeparatorCharacter);
+        }
+        
         public void Dispose()
         {
             // nothing to dispose
         }
 
+        public char DirectorySeparatorCharacter { get; }
+        public readonly string BasePath;
+
+        private string ApplyBaseDirectoryToStoragePointer(ref string storagePointer)
+        {
+            if (string.IsNullOrWhiteSpace(storagePointer))
+            {
+                throw Errors.StoragePointerMustHaveValue;
+            }
+            
+            if (string.IsNullOrWhiteSpace(BasePath))
+            {
+                return storagePointer;
+            }
+            
+            if (storagePointer.StartsWith(BasePath + DirectorySeparatorCharacter))
+            {
+                return storagePointer;
+            }
+
+            storagePointer = BasePath + DirectorySeparatorCharacter + storagePointer;
+
+            return storagePointer;
+        }
+
         public async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
             CancellationToken cancellationToken = default)
         {
+            ApplyBaseDirectoryToStoragePointer(ref storagePointer);
+            
             if (stream is null) throw new ArgumentNullException(nameof(stream));
 
             var exists = await ExistsAsync(storagePointer, cancellationToken);
@@ -69,6 +102,8 @@ namespace FileParty.Providers.FileSystem
 
         public Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
+            ApplyBaseDirectoryToStoragePointer(ref storagePointer);
+            
             if (!TryGetStoredItemType(storagePointer, out var type)) throw Errors.FileNotFoundException;
 
             if (type != StoredItemType.File) throw Errors.MustBeFile;
@@ -79,6 +114,8 @@ namespace FileParty.Providers.FileSystem
 
         public Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
+            ApplyBaseDirectoryToStoragePointer(ref storagePointer);
+            
             if (!TryGetStoredItemType(storagePointer, out var type) || type == null)
                 throw Errors.FileNotFoundException;
 
@@ -91,7 +128,11 @@ namespace FileParty.Providers.FileSystem
 
         public Task DeleteAsync(IEnumerable<string> storagePointers, CancellationToken cancellationToken = default)
         {
-            foreach (var storagePointer in storagePointers)
+            var storagePointerArray = storagePointers
+                .Select(s => ApplyBaseDirectoryToStoragePointer(ref s))
+                .ToArray();
+            
+            foreach (var storagePointer in storagePointerArray)
             {
                 if (!TryGetStoredItemType(storagePointer, out var type) || type == null)
                     continue;
@@ -106,6 +147,8 @@ namespace FileParty.Providers.FileSystem
 
         public Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
+            ApplyBaseDirectoryToStoragePointer(ref storagePointer);
+            
             return Task.FromResult(
                 TryGetStoredItemType(storagePointer, out var _));
         }
@@ -113,7 +156,11 @@ namespace FileParty.Providers.FileSystem
         public Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default)
         {
-            IDictionary<string, bool> result = storagePointers
+            var storagePointerArray = storagePointers
+                .Select(s => ApplyBaseDirectoryToStoragePointer(ref s))
+                .ToArray();
+            
+            IDictionary<string, bool> result = storagePointerArray
                 .ToDictionary(
                     k => k,
                     v => ExistsAsync(v, cancellationToken).Result);
@@ -124,6 +171,8 @@ namespace FileParty.Providers.FileSystem
         public Task<IStoredItemInformation> GetInformation(string storagePointer,
             CancellationToken cancellationToken = default)
         {
+            ApplyBaseDirectoryToStoragePointer(ref storagePointer);
+            
             if (!TryGetStoredItemType(storagePointer, out var type) || type == null) return null;
 
             var fileInfo = new FileInfo(storagePointer);
@@ -147,6 +196,8 @@ namespace FileParty.Providers.FileSystem
 
         public bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
         {
+            ApplyBaseDirectoryToStoragePointer(ref storagePointer);
+            
             type = null;
 
             try
