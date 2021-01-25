@@ -14,6 +14,12 @@ namespace FileParty.Core.Interfaces
     public interface IStorageProvider : IDisposable
     {
         /// <summary>
+        /// Directory Separator Character
+        /// In some instances, using Path.DirectorySeparatorCharacter will do the trick, but in others, it should be explicitly defined.
+        /// </summary>
+        char DirectorySeparatorCharacter { get; }
+        
+        /// <summary>
         /// Write a stream to a storage provider
         /// </summary>
         /// <param name="storagePointer">Generally the path to store the file</param>
