@@ -148,7 +148,6 @@ namespace FileParty.Providers.AWS.S3
                     .Select(s => new KeyVersion {Key = s.Key})
                     .ToList()
             };
-
             using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
             await s3Client.DeleteObjectsAsync(deleteRequest, cancellationToken);
 
