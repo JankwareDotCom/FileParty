@@ -7,8 +7,7 @@ namespace FileParty.Core.Interfaces
     /// </summary>
     public interface IStorageProvider :
         IStorageWriter, 
-        IStorageReader, 
-        IDisposable
+        IStorageReader
     {
         
     }

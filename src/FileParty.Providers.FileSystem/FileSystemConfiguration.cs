@@ -3,7 +3,7 @@ using FileParty.Core.Models;
 
 namespace FileParty.Providers.FileSystem
 {
-    public class FileSystemConfiguration : StorageProviderConfiguration<FileSystemStorageProvider>
+    public class FileSystemConfiguration : StorageProviderConfiguration<FileSystemModule>
     {
         private char _directorySeparator = Path.DirectorySeparatorChar;
         public override char DirectorySeparationCharacter => _directorySeparator;

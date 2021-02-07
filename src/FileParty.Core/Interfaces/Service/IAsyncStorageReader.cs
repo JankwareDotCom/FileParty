@@ -42,12 +42,10 @@ namespace FileParty.Core.Interfaces
         /// Tries to get a stored item type (Directory / File)
         /// </summary>
         /// <param name="storagePointer">Generally the path where the file is stored</param>
-        /// <param name="type">Output of stored item type, returns File or Directory on success, null on failure</param>
         /// <param name="cancellationToken">Cancellation Token</param>
-        /// <returns>True when the file exists</returns>
-        Task<bool> TryGetStoredItemTypeAsync(
-            string storagePointer, 
-            out StoredItemType? type,
+        /// <returns>StoredItemType or null when unable</returns>
+        Task<StoredItemType?> TryGetStoredItemTypeAsync(
+            string storagePointer,
             CancellationToken cancellationToken = default);
 
         /// <summary>

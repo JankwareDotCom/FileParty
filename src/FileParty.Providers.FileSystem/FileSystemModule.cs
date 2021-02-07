@@ -1,12 +1,9 @@
-﻿using System;
-using FileParty.Core;
+﻿using FileParty.Core;
 
 namespace FileParty.Providers.FileSystem
 {
-    public class FileSystemModule : BaseFilePartyModule
+    public class FileSystemModule : BaseFilePartyModule<FileSystemStorageProvider, FileSystemStorageProvider>
     {
-        public override Type GetStorageProviderType() => typeof(FileSystemStorageProvider);
-
-        public override Type GetAsyncStorageProviderType() => typeof(FileSystemStorageProvider);
+        
     }
 }

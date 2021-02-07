@@ -37,7 +37,8 @@ namespace FileParty.Core
         public abstract Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default);
 
-        public abstract Task<bool> TryGetStoredItemTypeAsync(string storagePointer, out StoredItemType? type, CancellationToken cancellationToken = default);
+        public abstract Task<StoredItemType?> TryGetStoredItemTypeAsync(string storagePointer,
+            CancellationToken cancellationToken = default);
 
         public abstract Task<IStoredItemInformation> GetInformationAsync(string storagePointer,
             CancellationToken cancellationToken = default);

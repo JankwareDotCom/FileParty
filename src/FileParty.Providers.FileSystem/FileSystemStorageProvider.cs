@@ -14,28 +14,25 @@ namespace FileParty.Providers.FileSystem
 {
     public class FileSystemStorageProvider : IAsyncStorageProvider, IStorageProvider
     {
-        private StorageProviderConfiguration<FileSystemStorageProvider> _config;
+        private StorageProviderConfiguration<FileSystemModule> _config;
 
-        public FileSystemStorageProvider(StorageProviderConfiguration<FileSystemStorageProvider> config)
+        public FileSystemStorageProvider(StorageProviderConfiguration<FileSystemModule> config)
         {
             _config = config;
             DirectorySeparatorCharacter = config.DirectorySeparationCharacter;
         }
-
-        public virtual void Dispose()
-        {
-            _config = null;
-        }
-
+        
         public virtual char DirectorySeparatorCharacter { get; }
 
-        public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
-            CancellationToken cancellationToken = default)
+        public async Task WriteAsync(FilePartyWriteRequest request, CancellationToken cancellationToken)
         {
+            var storagePointer = request.StoragePointer;
+            var writeMode = request.WriteMode;
+            
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
             
-            if (stream is null) throw new ArgumentNullException(nameof(stream));
-
+            if (request.Stream is null) throw new ArgumentNullException(nameof(request), "Request Stream may not be null");
+            
             var exists = await ExistsAsync(storagePointer, cancellationToken);
 
             switch (exists)
@@ -52,31 +49,30 @@ namespace FileParty.Providers.FileSystem
 
             await using var writeStream = File.Create(storagePointer);
 
-            if (stream.CanSeek) stream.Seek(0, SeekOrigin.Begin);
+            if (request.Stream.CanSeek) request.Stream.Seek(0, SeekOrigin.Begin);
 
             if (writeStream.CanSeek) writeStream.Seek(0, SeekOrigin.End);
 
             var buffer = new byte[4096];
             long totalBytesWritten = 0;
-            var streamSize = stream.Length;
+            var streamSize = request.Stream.Length;
             int bytesRead;
 
             do
             {
-                bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
-                await writeStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
+                bytesRead = await request.Stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+                await writeStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
                 await writeStream.FlushAsync(cancellationToken);
                 totalBytesWritten += bytesRead;
 
-                WriteProgressEvent?.Invoke(this, new WriteProgressEventArgs
-                {
-                    StoragePointer = storagePointer,
-                    TotalBytesTransferred = totalBytesWritten,
-                    TotalBytesRemaining = streamSize - totalBytesWritten,
-                    TotalFileBytes = streamSize,
-                    PercentComplete = (int) Math.Round((double) (totalBytesWritten * 100) / streamSize)
-                });
+                WriteProgressEvent?.Invoke(this, new WriteProgressEventArgs(request.Id, storagePointer, totalBytesWritten, streamSize));
             } while (bytesRead > 0 && totalBytesWritten < streamSize);
+        }
+
+        public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode, CancellationToken cancellationToken = default)
+        {
+            var request = FilePartyWriteRequest.Create(storagePointer, stream, out _, writeMode);
+            await WriteAsync(request, cancellationToken);
         }
 
         public virtual Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
@@ -147,6 +143,13 @@ namespace FileParty.Providers.FileSystem
             return Task.FromResult(result);
         }
 
+        public async Task<StoredItemType?> TryGetStoredItemTypeAsync(string storagePointer,
+            CancellationToken cancellationToken = default)
+        {
+            TryGetStoredItemType(storagePointer, out var type);
+            return type;
+        }
+
         public virtual Task<IStoredItemInformation> GetInformationAsync(string storagePointer,
             CancellationToken cancellationToken = default)
         {
@@ -193,9 +196,14 @@ namespace FileParty.Providers.FileSystem
             }
         }
 
+        public void Write(FilePartyWriteRequest request)
+        {
+            WriteAsync(request, CancellationToken.None).Wait();
+        }
+
         public virtual void Write(string storagePointer, Stream stream, WriteMode writeMode)
         {
-            WriteAsync(storagePointer, stream, writeMode).Wait();
+            Write(new FilePartyWriteRequest(storagePointer, stream, writeMode));
         }
 
         public virtual void Delete(string storagePointer)
@@ -260,12 +268,6 @@ namespace FileParty.Providers.FileSystem
             storagePointer = basePath + DirectorySeparatorCharacter + storagePointer;
 
             return storagePointer;
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            Dispose();
-            return ValueTask.CompletedTask;
         }
     }
 }

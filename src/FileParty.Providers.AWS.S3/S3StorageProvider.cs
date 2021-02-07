@@ -21,9 +21,9 @@ namespace FileParty.Providers.AWS.S3
     public class S3StorageProvider : IAsyncStorageProvider, IStorageProvider
     {
         
-        private StorageProviderConfiguration<S3StorageProvider> _config;
+        private StorageProviderConfiguration<AWS_S3Module> _config;
 
-        public S3StorageProvider(StorageProviderConfiguration<S3StorageProvider> awsConfiguration)
+        public S3StorageProvider(StorageProviderConfiguration<AWS_S3Module> awsConfiguration)
         {
             _config = awsConfiguration;
         }
@@ -35,36 +35,37 @@ namespace FileParty.Providers.AWS.S3
 
         public virtual char DirectorySeparatorCharacter { get; } = '/';
 
-        public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
-            CancellationToken cancellationToken = default)
+        public async Task WriteAsync(FilePartyWriteRequest request, CancellationToken cancellationToken)
         {
-            if (await ExistsAsync(storagePointer, cancellationToken) && writeMode == WriteMode.Create)
+            if (await ExistsAsync(request.StoragePointer, cancellationToken) && request.WriteMode == WriteMode.Create)
                 throw Errors.FileAlreadyExistsException;
 
             var transferRequest = new TransferUtilityUploadRequest
             {
                 BucketName = GetBucketInfo().Name,
-                InputStream = stream,
-                Key = storagePointer
+                InputStream = request.Stream,
+                Key = request.StoragePointer
             };
 
             if (WriteProgressEvent != null)
+            {
                 transferRequest.UploadProgressEvent += (_, args) =>
                 {
-                    WriteProgressEvent.Invoke(this, new WriteProgressEventArgs
-                    {
-                        StoragePointer = storagePointer,
-                        TotalBytesTransferred = args.TransferredBytes,
-                        TotalBytesRemaining = stream.Length - args.TransferredBytes,
-                        TotalFileBytes = stream.Length,
-                        PercentComplete = args.PercentDone
-                    });
+                    WriteProgressEvent.Invoke(this, new WriteProgressEventArgs(request.Id, request.StoragePointer, args.TransferredBytes, args.TotalBytes));
                 };
-
+            }
+                
             var creds = GetAmazonCredentials();
             using var s3Client = new AmazonS3Client(creds, GetBucketInfo().GetRegionEndpoint());
             using var transferUtility = new TransferUtility(s3Client);
             await transferUtility.UploadAsync(transferRequest, cancellationToken);
+        }
+
+        public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
+            CancellationToken cancellationToken = default)
+        {
+            var request = FilePartyWriteRequest.Create(storagePointer, stream, out _, writeMode);
+            await WriteAsync(request, cancellationToken);
         }
 
         public virtual async Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
@@ -197,39 +198,45 @@ namespace FileParty.Providers.AWS.S3
             return Task.FromResult(result);
         }
 
+        public async Task<StoredItemType?> TryGetStoredItemTypeAsync(string storagePointer, CancellationToken cancellationToken = default)
+        {
+            StoredItemType? type = null;
+            try
+            {
+                var info = await GetInformationAsync(storagePointer, cancellationToken);
+                type = info.StoredType;
+                return type;
+            }
+            catch
+            {
+                return type;
+            }
+        }
+
         public virtual Stream Read(string storagePointer)
         {
-            throw new NotImplementedException();
+            return ReadAsync(storagePointer).Result;
         }
 
         public virtual bool Exists(string storagePointer)
         {
-            throw new NotImplementedException();
+            return ExistsAsync(storagePointer).Result;
         }
 
         public virtual IDictionary<string, bool> Exists(IEnumerable<string> storagePointers)
         {
-            throw new NotImplementedException();
+            return ExistsAsync(storagePointers).Result;
         }
 
         public virtual bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
         {
-            type = null;
-            try
-            {
-                var info = GetInformationAsync(storagePointer).Result;
-                type = info.StoredType;
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            type = TryGetStoredItemTypeAsync(storagePointer, CancellationToken.None).Result;
+            return type != null;
         }
 
         public virtual IStoredItemInformation GetInformation(string storagePointer)
         {
-            throw new NotImplementedException();
+            return GetInformationAsync(storagePointer).Result;
         }
 
         public virtual async Task<IStoredItemInformation> GetInformationAsync(string storagePointer,
@@ -296,9 +303,14 @@ namespace FileParty.Providers.AWS.S3
             }
         }
 
+        public void Write(FilePartyWriteRequest request)
+        {
+            WriteAsync(request, CancellationToken.None).Wait();
+        }
+
         public virtual void Write(string storagePointer, Stream stream, WriteMode writeMode)
         {
-            WriteAsync(storagePointer, stream, writeMode).Wait();
+            Write(new FilePartyWriteRequest(storagePointer, stream, writeMode));
         }
 
         public virtual void Delete(string storagePointer)
@@ -336,7 +348,7 @@ namespace FileParty.Providers.AWS.S3
         public ValueTask DisposeAsync()
         {
             Dispose();
-            return ValueTask.CompletedTask;
+            return new ValueTask();
         }
     }
 }

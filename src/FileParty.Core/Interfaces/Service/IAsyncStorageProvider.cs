@@ -7,8 +7,7 @@ namespace FileParty.Core.Interfaces
     /// </summary>
     public interface IAsyncStorageProvider :
         IAsyncStorageReader,
-        IAsyncStorageWriter,
-        IAsyncDisposable
+        IAsyncStorageWriter
     {
         
     }
