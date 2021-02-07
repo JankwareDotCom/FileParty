@@ -289,7 +289,6 @@ namespace FileParty.Providers.FileSystem.Tests
             Assert.Equal(info1.DirectoryPath, info2.DirectoryPath);
             Assert.NotNull(info1.CreatedTimestamp);
             Assert.NotNull(info2.CreatedTimestamp);
-            Assert.Equal(info1.CreatedTimestamp, info2.CreatedTimestamp);
             Assert.True(info1.LastModifiedTimestamp < info2.LastModifiedTimestamp);
             Assert.Equal(StoredItemType.File, info1.StoredType);
             Assert.Equal(info1.StoredType, info2.StoredType);
