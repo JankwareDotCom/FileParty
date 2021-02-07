@@ -88,12 +88,12 @@ namespace FileParty.Core.RegistrationTests
             throw new System.NotImplementedException();
         }
 
-        public override Task<bool> TryGetStoredItemTypeAsync(string storagePointer, out StoredItemType? type,
+        public override Task<StoredItemType?> TryGetStoredItemTypeAsync(string storagePointer,
             CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
         }
-
+        
         public override Task<IStoredItemInformation> GetInformationAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();
@@ -203,12 +203,11 @@ namespace FileParty.Core.RegistrationTests
             throw new System.NotImplementedException();
         }
 
-        public override Task<bool> TryGetStoredItemTypeAsync(string storagePointer, out StoredItemType? type,
-            CancellationToken cancellationToken = default)
+        public override Task<StoredItemType?> TryGetStoredItemTypeAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
-
+        
         public override Task<IStoredItemInformation> GetInformationAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             throw new System.NotImplementedException();

@@ -5,8 +5,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using FileParty.Core.Enums;
 using FileParty.Core.Interfaces;
+using FileParty.Core.Registration;
 using FileParty.Providers.AWS.S3;
 using FileParty.Providers.AWS.S3.Config;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace FileParty.Handlers.AWS.S3.Tests
@@ -25,7 +27,10 @@ namespace FileParty.Handlers.AWS.S3.Tests
 
         public S3StorageProviderShould()
         {
-            _asyncStorageProvider = new S3StorageProvider(_config);
+            var sc =this.AddFileParty(x => x.AddModule(_config));
+            using var sp = sc.BuildServiceProvider();
+            var asyncFactory = sp.GetRequiredService<IAsyncFilePartyFactory>();
+            _asyncStorageProvider = asyncFactory.GetAsyncStorageProvider().Result;
         }
 
         [Fact]
@@ -91,15 +96,14 @@ namespace FileParty.Handlers.AWS.S3.Tests
                 await _asyncStorageProvider.WriteAsync(
                     storagePointer,
                     stream,
-                    WriteMode.Create);
+                    WriteMode.CreateOrReplace);
 
                 inputStream.Position = 0;
                 
                 Assert.True(await _asyncStorageProvider.ExistsAsync(storagePointer));
             }
 
-            Assert.True(_asyncStorageProvider.TryGetStoredItemType("dir2", out var type));
-            Assert.Equal(StoredItemType.Directory, type);
+            Assert.Equal(StoredItemType.Directory,await _asyncStorageProvider.TryGetStoredItemTypeAsync("dir2"));
             
             await _asyncStorageProvider.DeleteAsync("dir2");
 

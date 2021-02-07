@@ -9,6 +9,8 @@ using FileParty.Core;
 using FileParty.Core.Enums;
 using FileParty.Core.Exceptions;
 using FileParty.Core.Interfaces;
+using FileParty.Core.Registration;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace FileParty.Providers.FileSystem.Tests
@@ -19,13 +21,17 @@ namespace FileParty.Providers.FileSystem.Tests
             $"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}{Guid.Empty}{Path.DirectorySeparatorChar}";
 
         private readonly IAsyncStorageProvider _asyncStorageProvider;
-
+        private readonly IStorageProvider _storageProvider;
+        
         public FileSystemStorageProviderShould()
         {
-            _asyncStorageProvider = FilePartyProviderFactory.CreateAsyncStorageProvider(
-                new FileSystemConfiguration(_baseDirectory)
-                    .UseDirectorySeparationCharacter(Path.DirectorySeparatorChar)
-                );
+            var sc = this.AddFileParty(x => x.AddModule(new FileSystemConfiguration(_baseDirectory)));
+            using var sp = sc.BuildServiceProvider();
+            var factory = sp.GetRequiredService<IFilePartyFactory>();
+            var asyncFactory = sp.GetRequiredService<IAsyncFilePartyFactory>();
+
+            _asyncStorageProvider = asyncFactory.GetAsyncStorageProvider().Result;
+            _storageProvider = factory.GetStorageProvider();
             
             if (Directory.Exists(_baseDirectory)) Directory.Delete(_baseDirectory, true);
             Directory.CreateDirectory(_baseDirectory);
@@ -33,7 +39,6 @@ namespace FileParty.Providers.FileSystem.Tests
 
         public void Dispose()
         {
-            _asyncStorageProvider.DisposeAsync().ConfigureAwait(true);
             Directory.Delete(_baseDirectory, true);
         }
 
@@ -63,12 +68,11 @@ namespace FileParty.Providers.FileSystem.Tests
             await using var fs = File.Create(_baseDirectory + filePath);
             Directory.CreateDirectory(_baseDirectory + directoryPath);
 
-            Assert.True(_asyncStorageProvider.TryGetStoredItemType(filePath, out var fileType));
-            Assert.True(_asyncStorageProvider.TryGetStoredItemType(directoryPath, out var dirType));
-            Assert.False(_asyncStorageProvider.TryGetStoredItemType(Guid.NewGuid().ToString(), out var trashType));
-            Assert.Equal(StoredItemType.File, fileType);
-            Assert.Equal(StoredItemType.Directory, dirType);
-            Assert.Null(trashType);
+            Assert.NotNull(await _asyncStorageProvider.TryGetStoredItemTypeAsync(filePath));
+            Assert.NotNull(await _asyncStorageProvider.TryGetStoredItemTypeAsync(directoryPath));
+            Assert.Null(await _asyncStorageProvider.TryGetStoredItemTypeAsync(Guid.NewGuid().ToString()));
+            Assert.Equal(StoredItemType.File, await _asyncStorageProvider.TryGetStoredItemTypeAsync(filePath));
+            Assert.Equal(StoredItemType.Directory, await _asyncStorageProvider.TryGetStoredItemTypeAsync(directoryPath));
         }
 
         [Fact]
