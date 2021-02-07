@@ -1,30 +1,31 @@
-﻿namespace FileParty.Core.EventArgs
+﻿using System;
+using FileParty.Core.Models;
+
+namespace FileParty.Core.EventArgs
 {
     public class WriteProgressEventArgs
     {
-        /// <summary>
-        ///    Generally the path where the file is stored
-        /// </summary>
-        public string StoragePointer { get; set; }
+        public Guid WriteRequestId { get; }
+        
+        public WriteProgressInfo WriteProgressInfo { get; }
 
         /// <summary>
-        ///     Total bytes transferred
+        /// DateTime when the event was raised
         /// </summary>
-        public long TotalBytesTransferred { get; set; }
+        public DateTime RaiseDate { get; set; } = DateTime.UtcNow;
 
-        /// <summary>
-        ///     Remaining bytes to be transferred
-        /// </summary>
-        public long TotalBytesRemaining { get; set; }
-
-        /// <summary>
-        ///     File size in bytes
-        /// </summary>
-        public long TotalFileBytes { get; set; }
-
-        /// <summary>
-        ///     Percent complete
-        /// </summary>
-        public int PercentComplete { get; set; }
+        public WriteProgressEventArgs(Guid id, string storagePointer, long totalBytesTransferred, long totalFileBytes)
+        {
+            WriteRequestId = id;
+            WriteProgressInfo = new WriteProgressInfo
+            {
+                WriteProgressId = id,
+                StoragePointer = storagePointer,
+                TotalBytesTransferred = totalBytesTransferred,
+                TotalBytesRemaining = totalFileBytes - totalBytesTransferred,
+                TotalFileBytes = totalFileBytes,
+                PercentComplete = (int) Math.Round((double) (totalBytesTransferred * 100) / totalFileBytes)
+            };
+        }
     }
 }

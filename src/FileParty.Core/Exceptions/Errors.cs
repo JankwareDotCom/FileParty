@@ -16,5 +16,17 @@
 
         public static readonly StorageException StoragePointerMustHaveValue =
             new StorageException("FP-004", "The storage pointer cannot be null or empty");
+
+        public static readonly StorageException InvalidConfiguration =
+            new StorageException("FP-005", "Storage Provider Configuration is Invalid.");
+
+        public static StorageException DefaultConfigNotFound =
+            new StorageException("FP-006", "A default configuration could not be found for a storage " +
+                                           "provider module.");
+
+        public static StorageException SPNotFound =
+            new StorageException("FP-007", "A storage provider could not be found.  Ensure the module to " +
+                                           "which it belongs has been registered");
+
     }
 }

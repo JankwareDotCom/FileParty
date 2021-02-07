@@ -12,45 +12,24 @@ using FileParty.Core.Models;
 
 namespace FileParty.Providers.FileSystem
 {
-    public class FileSystemStorageProvider : IStorageProvider
+    public class FileSystemStorageProvider : IAsyncStorageProvider, IStorageProvider
     {
-        public FileSystemStorageProvider(FileSystemConfiguration config)
+        private StorageProviderConfiguration<FileSystemStorageProvider> _config;
+
+        public FileSystemStorageProvider(StorageProviderConfiguration<FileSystemStorageProvider> config)
         {
+            _config = config;
             DirectorySeparatorCharacter = config.DirectorySeparationCharacter;
-            BasePath = config.BasePath.TrimEnd(DirectorySeparatorCharacter);
         }
-        
-        public void Dispose()
+
+        public virtual void Dispose()
         {
-            // nothing to dispose
+            _config = null;
         }
 
-        public char DirectorySeparatorCharacter { get; }
-        public readonly string BasePath;
+        public virtual char DirectorySeparatorCharacter { get; }
 
-        private string ApplyBaseDirectoryToStoragePointer(ref string storagePointer)
-        {
-            if (string.IsNullOrWhiteSpace(storagePointer))
-            {
-                throw Errors.StoragePointerMustHaveValue;
-            }
-            
-            if (string.IsNullOrWhiteSpace(BasePath))
-            {
-                return storagePointer;
-            }
-            
-            if (storagePointer.StartsWith(BasePath + DirectorySeparatorCharacter))
-            {
-                return storagePointer;
-            }
-
-            storagePointer = BasePath + DirectorySeparatorCharacter + storagePointer;
-
-            return storagePointer;
-        }
-
-        public async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
+        public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
             CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
@@ -100,7 +79,7 @@ namespace FileParty.Providers.FileSystem
             } while (bytesRead > 0 && totalBytesWritten < streamSize);
         }
 
-        public Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
+        public virtual Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
             
@@ -112,7 +91,7 @@ namespace FileParty.Providers.FileSystem
             return Task.FromResult(fs);
         }
 
-        public Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
+        public virtual Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
             
@@ -126,7 +105,7 @@ namespace FileParty.Providers.FileSystem
             return Task.CompletedTask;
         }
 
-        public Task DeleteAsync(IEnumerable<string> storagePointers, CancellationToken cancellationToken = default)
+        public virtual Task DeleteAsync(IEnumerable<string> storagePointers, CancellationToken cancellationToken = default)
         {
             var storagePointerArray = storagePointers
                 .Select(s => ApplyBaseDirectoryToStoragePointer(ref s))
@@ -145,7 +124,7 @@ namespace FileParty.Providers.FileSystem
             return Task.CompletedTask;
         }
 
-        public Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
+        public virtual Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
             
@@ -153,7 +132,7 @@ namespace FileParty.Providers.FileSystem
                 TryGetStoredItemType(storagePointer, out var _));
         }
 
-        public Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
+        public virtual Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default)
         {
             var storagePointerArray = storagePointers
@@ -168,7 +147,7 @@ namespace FileParty.Providers.FileSystem
             return Task.FromResult(result);
         }
 
-        public Task<IStoredItemInformation> GetInformation(string storagePointer,
+        public virtual Task<IStoredItemInformation> GetInformationAsync(string storagePointer,
             CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
@@ -192,9 +171,9 @@ namespace FileParty.Providers.FileSystem
             return Task.FromResult(result);
         }
 
-        public event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
+        public virtual event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
 
-        public bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
+        public virtual bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
             
@@ -212,6 +191,81 @@ namespace FileParty.Providers.FileSystem
             {
                 return false;
             }
+        }
+
+        public virtual void Write(string storagePointer, Stream stream, WriteMode writeMode)
+        {
+            WriteAsync(storagePointer, stream, writeMode).Wait();
+        }
+
+        public virtual void Delete(string storagePointer)
+        {
+            DeleteAsync(storagePointer).Wait();
+        }
+
+        public virtual void Delete(IEnumerable<string> storagePointers)
+        {
+            DeleteAsync(storagePointers).Wait();
+        }
+
+        public virtual Stream Read(string storagePointer)
+        {
+            return ReadAsync(storagePointer).Result;
+        }
+
+        public virtual bool Exists(string storagePointer)
+        {
+            return ExistsAsync(storagePointer).Result;
+        }
+
+        public virtual IDictionary<string, bool> Exists(IEnumerable<string> storagePointers)
+        {
+            return ExistsAsync(storagePointers).Result;
+        }
+
+        public virtual IStoredItemInformation GetInformation(string storagePointer)
+        {
+            return GetInformationAsync(storagePointer).Result;
+        }
+
+        protected virtual string GetBasePath()
+        {
+            if (_config is FileSystemConfiguration fsc)
+            {
+                return fsc.BasePath;
+            }
+
+            throw Errors.InvalidConfiguration;
+        }
+
+        protected virtual string ApplyBaseDirectoryToStoragePointer(ref string storagePointer)
+        {
+            var basePath = GetBasePath();
+            
+            if (string.IsNullOrWhiteSpace(storagePointer))
+            {
+                throw Errors.StoragePointerMustHaveValue;
+            }
+            
+            if (string.IsNullOrWhiteSpace(basePath))
+            {
+                return storagePointer;
+            }
+            
+            if (storagePointer.StartsWith(basePath + DirectorySeparatorCharacter))
+            {
+                return storagePointer;
+            }
+
+            storagePointer = basePath + DirectorySeparatorCharacter + storagePointer;
+
+            return storagePointer;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

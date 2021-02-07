@@ -18,28 +18,24 @@ using FileParty.Providers.AWS.S3.Config;
 
 namespace FileParty.Providers.AWS.S3
 {
-    public class S3StorageProvider : IStorageProvider
+    public class S3StorageProvider : IAsyncStorageProvider, IStorageProvider
     {
         
-        private string _configType;
-        private readonly AWSAccessKeyConfiguration _accessKeyConfig;
-        private readonly AWSBucketInformation _bucketInfo;
+        private StorageProviderConfiguration<S3StorageProvider> _config;
 
-        public S3StorageProvider(AWSAccessKeyConfiguration awsAccessKeyConfiguration)
+        public S3StorageProvider(StorageProviderConfiguration<S3StorageProvider> awsConfiguration)
         {
-            _configType = nameof(AWSAccessKeyConfiguration);
-            _accessKeyConfig = awsAccessKeyConfiguration;
-            _bucketInfo = awsAccessKeyConfiguration;
+            _config = awsConfiguration;
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
-            _configType = null;
+            _config = null;
         }
 
-        public char DirectorySeparatorCharacter { get; } = '/';
+        public virtual char DirectorySeparatorCharacter { get; } = '/';
 
-        public async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
+        public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
             CancellationToken cancellationToken = default)
         {
             if (await ExistsAsync(storagePointer, cancellationToken) && writeMode == WriteMode.Create)
@@ -47,7 +43,7 @@ namespace FileParty.Providers.AWS.S3
 
             var transferRequest = new TransferUtilityUploadRequest
             {
-                BucketName = _bucketInfo.Name,
+                BucketName = GetBucketInfo().Name,
                 InputStream = stream,
                 Key = storagePointer
             };
@@ -66,39 +62,39 @@ namespace FileParty.Providers.AWS.S3
                 };
 
             var creds = GetAmazonCredentials();
-            using var s3Client = new AmazonS3Client(creds, _bucketInfo.GetRegionEndpoint());
+            using var s3Client = new AmazonS3Client(creds, GetBucketInfo().GetRegionEndpoint());
             using var transferUtility = new TransferUtility(s3Client);
             await transferUtility.UploadAsync(transferRequest, cancellationToken);
         }
 
-        public async Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
+        public virtual async Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             // check if exists / throw
-            await GetInformation(storagePointer, cancellationToken);
+            await GetInformationAsync(storagePointer, cancellationToken);
 
             var getRequest = new GetObjectRequest
             {
-                BucketName = _bucketInfo.Name,
+                BucketName = GetBucketInfo().Name,
                 Key = storagePointer
             };
 
-            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
+            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
             using var response = await s3Client.GetObjectAsync(getRequest, cancellationToken);
             await using var responseStream = response.ResponseStream;
             return responseStream;
         }
 
-        public async Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
+        public virtual async Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
-            var info = await GetInformation(storagePointer, cancellationToken);
+            var info = await GetInformationAsync(storagePointer, cancellationToken);
 
             var deleteRequest = new DeleteObjectRequest
             {
-                BucketName = _bucketInfo.Name,
+                BucketName = GetBucketInfo().Name,
                 Key = storagePointer
             };
 
-            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
+            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
 
             if (info.StoredType == StoredItemType.File)
             {
@@ -115,7 +111,7 @@ namespace FileParty.Providers.AWS.S3
                     var directoryContents = await s3Client
                         .ListObjectsV2Async(new ListObjectsV2Request
                         {
-                            BucketName = _bucketInfo.Name,
+                            BucketName = GetBucketInfo().Name,
                             MaxKeys = 1000,
                             Prefix = prefix,
 
@@ -129,7 +125,7 @@ namespace FileParty.Providers.AWS.S3
             }
         }
 
-        public async Task DeleteAsync(IEnumerable<string> storagePointers,
+        public virtual async Task DeleteAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default)
         {
             var spArray = storagePointers as string[] ?? storagePointers.ToArray();
@@ -142,13 +138,13 @@ namespace FileParty.Providers.AWS.S3
 
             var deleteRequest = new DeleteObjectsRequest
             {
-                BucketName = _bucketInfo.Name,
+                BucketName = GetBucketInfo().Name,
                 Objects = storagePointerTypeDict
                     .Where(w=>w.Value == StoredItemType.File)
                     .Select(s => new KeyVersion {Key = s.Key})
                     .ToList()
             };
-            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
+            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
             await s3Client.DeleteObjectsAsync(deleteRequest, cancellationToken);
 
             foreach (var dir in storagePointerTypeDict
@@ -163,7 +159,7 @@ namespace FileParty.Providers.AWS.S3
                     var directoryContents = await s3Client
                         .ListObjectsV2Async(new ListObjectsV2Request
                         {
-                            BucketName = _bucketInfo.Name,
+                            BucketName = GetBucketInfo().Name,
                             MaxKeys = 1000,
                             Prefix = prefix,
 
@@ -177,11 +173,11 @@ namespace FileParty.Providers.AWS.S3
             }
         }
 
-        public async Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
+        public virtual async Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             try
             {
-                await GetInformation(storagePointer, cancellationToken);
+                await GetInformationAsync(storagePointer, cancellationToken);
                 return true;
             }
             catch (Exception)
@@ -190,7 +186,7 @@ namespace FileParty.Providers.AWS.S3
             }
         }
 
-        public Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
+        public virtual Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default)
         {
             IDictionary<string, bool> result = storagePointers
@@ -201,12 +197,27 @@ namespace FileParty.Providers.AWS.S3
             return Task.FromResult(result);
         }
 
-        public bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
+        public virtual Stream Read(string storagePointer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual bool Exists(string storagePointer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual IDictionary<string, bool> Exists(IEnumerable<string> storagePointers)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
         {
             type = null;
             try
             {
-                var info = GetInformation(storagePointer).Result;
+                var info = GetInformationAsync(storagePointer).Result;
                 type = info.StoredType;
                 return true;
             }
@@ -216,12 +227,17 @@ namespace FileParty.Providers.AWS.S3
             }
         }
 
-        public async Task<IStoredItemInformation> GetInformation(string storagePointer,
+        public virtual IStoredItemInformation GetInformation(string storagePointer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual async Task<IStoredItemInformation> GetInformationAsync(string storagePointer,
             CancellationToken cancellationToken = default)
         {
             try
             {
-                using var s3Client = new AmazonS3Client(GetAmazonCredentials(), _bucketInfo.GetRegionEndpoint());
+                using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
 
                 var result = new StoredItemInformation();
 
@@ -229,7 +245,7 @@ namespace FileParty.Providers.AWS.S3
                 try
                 {
                     var omInfo = await s3Client
-                        .GetObjectMetadataAsync(_bucketInfo.Name, storagePointer, cancellationToken)
+                        .GetObjectMetadataAsync(GetBucketInfo().Name, storagePointer, cancellationToken)
                         .ConfigureAwait(false);
 
                     result.StoredType = StoredItemType.File;
@@ -244,7 +260,7 @@ namespace FileParty.Providers.AWS.S3
                         : storagePointer + DirectorySeparatorCharacter;
 
                     var loInfo = await s3Client
-                        .ListObjectsAsync(_bucketInfo.Name, storagePointer, cancellationToken)
+                        .ListObjectsAsync(GetBucketInfo().Name, storagePointer, cancellationToken)
                         .ConfigureAwait(false);
 
                     if (!loInfo.S3Objects.Any()) throw;
@@ -280,17 +296,47 @@ namespace FileParty.Providers.AWS.S3
             }
         }
 
-        public event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
-
-        private AWSCredentials GetAmazonCredentials()
+        public virtual void Write(string storagePointer, Stream stream, WriteMode writeMode)
         {
-            return _configType switch
+            WriteAsync(storagePointer, stream, writeMode).Wait();
+        }
+
+        public virtual void Delete(string storagePointer)
+        {
+            DeleteAsync(storagePointer).Wait();
+        }
+
+        public virtual void Delete(IEnumerable<string> storagePointers)
+        {
+            DeleteAsync(storagePointers).Wait();
+        }
+
+        public virtual event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
+
+        protected virtual AWSCredentials GetAmazonCredentials()
+        {
+            if (_config is AWSAccessKeyConfiguration accessKeyConfiguration)
             {
-                nameof(AWSAccessKeyConfiguration) =>
-                    new BasicAWSCredentials(_accessKeyConfig.AccessKey, _accessKeyConfig.SecretKey),
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(S3StorageProvider), "Invalid authentication scheme.")
-            };
+                return new BasicAWSCredentials(accessKeyConfiguration.AccessKey, accessKeyConfiguration.SecretKey);
+            }
+
+            throw Errors.InvalidConfiguration;
+        }
+
+        protected virtual IAWSBucketInformation GetBucketInfo()
+        {
+            if (_config is IAWSBucketInformation bucketInfo)
+            {
+                return bucketInfo;
+            }
+
+            throw Errors.InvalidConfiguration;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
         }
     }
 }

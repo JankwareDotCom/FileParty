@@ -2,7 +2,7 @@
 
 namespace FileParty.Providers.AWS.S3.Config
 {
-    public abstract class AWSBucketInformation
+    public interface IAWSBucketInformation
     {
         /// <summary>
         ///     AWS Region Endpoint System Name.  e.g. us-west-1
