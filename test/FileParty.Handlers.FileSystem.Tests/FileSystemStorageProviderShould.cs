@@ -18,11 +18,11 @@ namespace FileParty.Providers.FileSystem.Tests
         private readonly string _baseDirectory =
             $"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}{Guid.Empty}{Path.DirectorySeparatorChar}";
 
-        private readonly IStorageProvider _storageProvider;
+        private readonly IAsyncStorageProvider _asyncStorageProvider;
 
         public FileSystemStorageProviderShould()
         {
-            _storageProvider = FilePartyProviderFactory.CreateStorageProvider(
+            _asyncStorageProvider = FilePartyProviderFactory.CreateAsyncStorageProvider(
                 new FileSystemConfiguration(_baseDirectory)
                     .UseDirectorySeparationCharacter(Path.DirectorySeparatorChar)
                 );
@@ -33,7 +33,7 @@ namespace FileParty.Providers.FileSystem.Tests
 
         public void Dispose()
         {
-            _storageProvider?.Dispose();
+            _asyncStorageProvider.DisposeAsync().ConfigureAwait(true);
             Directory.Delete(_baseDirectory, true);
         }
 
@@ -42,8 +42,8 @@ namespace FileParty.Providers.FileSystem.Tests
         {
             var filePath = $"{Guid.NewGuid()}.txt";
             await using var fs = File.Create(_baseDirectory + filePath);
-            Assert.True(await _storageProvider.ExistsAsync(filePath));
-            Assert.False(await _storageProvider.ExistsAsync(filePath + "nope"));
+            Assert.True(await _asyncStorageProvider.ExistsAsync(filePath));
+            Assert.False(await _asyncStorageProvider.ExistsAsync(filePath + "nope"));
         }
 
         [Fact]
@@ -51,8 +51,8 @@ namespace FileParty.Providers.FileSystem.Tests
         {
             var directoryPath = $"{Guid.NewGuid()}";
             Directory.CreateDirectory(_baseDirectory + directoryPath);
-            Assert.True(await _storageProvider.ExistsAsync(directoryPath));
-            Assert.False(await _storageProvider.ExistsAsync(directoryPath + "nope"));
+            Assert.True(await _asyncStorageProvider.ExistsAsync(directoryPath));
+            Assert.False(await _asyncStorageProvider.ExistsAsync(directoryPath + "nope"));
         }
 
         [Fact]
@@ -63,9 +63,9 @@ namespace FileParty.Providers.FileSystem.Tests
             await using var fs = File.Create(_baseDirectory + filePath);
             Directory.CreateDirectory(_baseDirectory + directoryPath);
 
-            Assert.True(_storageProvider.TryGetStoredItemType(filePath, out var fileType));
-            Assert.True(_storageProvider.TryGetStoredItemType(directoryPath, out var dirType));
-            Assert.False(_storageProvider.TryGetStoredItemType(Guid.NewGuid().ToString(), out var trashType));
+            Assert.True(_asyncStorageProvider.TryGetStoredItemType(filePath, out var fileType));
+            Assert.True(_asyncStorageProvider.TryGetStoredItemType(directoryPath, out var dirType));
+            Assert.False(_asyncStorageProvider.TryGetStoredItemType(Guid.NewGuid().ToString(), out var trashType));
             Assert.Equal(StoredItemType.File, fileType);
             Assert.Equal(StoredItemType.Directory, dirType);
             Assert.Null(trashType);
@@ -84,18 +84,18 @@ namespace FileParty.Providers.FileSystem.Tests
 
             if (File.Exists(filePath)) File.Delete(filePath);
 
-            _storageProvider.WriteProgressEvent += (_, args) =>
+            _asyncStorageProvider.WriteProgressEvent += (_, args) =>
             {
                 Assert.NotNull(args);
                 Debug.WriteLine(JsonSerializer.Serialize(args));
             };
 
-            await _storageProvider.WriteAsync(
+            await _asyncStorageProvider.WriteAsync(
                 filePath,
                 inputStream,
                 WriteMode.Create);
 
-            Assert.True(await _storageProvider.ExistsAsync(filePath));
+            Assert.True(await _asyncStorageProvider.ExistsAsync(filePath));
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace FileParty.Providers.FileSystem.Tests
 
             if (File.Exists(filePath)) File.Delete(filePath);
 
-            _storageProvider.WriteProgressEvent += (_, args) =>
+            _asyncStorageProvider.WriteProgressEvent += (_, args) =>
             {
                 Assert.NotNull(args);
                 Debug.WriteLine(JsonSerializer.Serialize(args));
@@ -119,13 +119,13 @@ namespace FileParty.Providers.FileSystem.Tests
 
             var error = await Assert.ThrowsAsync<StorageException>(async () =>
             {
-                await _storageProvider.WriteAsync(
+                await _asyncStorageProvider.WriteAsync(
                     filePath,
                     inputStream,
                     WriteMode.Replace);
             });
 
-            Assert.False(await _storageProvider.ExistsAsync(filePath));
+            Assert.False(await _asyncStorageProvider.ExistsAsync(filePath));
             Assert.Equal(Errors.FileNotFoundException.Message, error.Message);
         }
 
@@ -142,7 +142,7 @@ namespace FileParty.Providers.FileSystem.Tests
 
             if (File.Exists(filePath)) File.Delete(filePath);
 
-            await _storageProvider.WriteAsync(
+            await _asyncStorageProvider.WriteAsync(
                 filePath,
                 inputStream,
                 WriteMode.Create);
@@ -153,7 +153,7 @@ namespace FileParty.Providers.FileSystem.Tests
             await replacementWriter.FlushAsync();
             replacementStream.Position = 0;
 
-            await _storageProvider.WriteAsync(
+            await _asyncStorageProvider.WriteAsync(
                 filePath,
                 replacementStream,
                 WriteMode.Replace);
@@ -176,7 +176,7 @@ namespace FileParty.Providers.FileSystem.Tests
 
             if (File.Exists(_baseDirectory + filePath)) File.Delete(_baseDirectory + filePath);
 
-            await _storageProvider.WriteAsync(
+            await _asyncStorageProvider.WriteAsync(
                 filePath,
                 inputStream,
                 WriteMode.Create);
@@ -189,7 +189,7 @@ namespace FileParty.Providers.FileSystem.Tests
 
             var error = await Assert.ThrowsAsync<StorageException>(async () =>
             {
-                await _storageProvider.WriteAsync(
+                await _asyncStorageProvider.WriteAsync(
                     filePath,
                     replacementStream,
                     WriteMode.Create);
@@ -211,13 +211,13 @@ namespace FileParty.Providers.FileSystem.Tests
             inputStream.Position = 0;
 
             var filePath = $"{Guid.NewGuid()}";
-            await _storageProvider.WriteAsync(filePath, inputStream, WriteMode.CreateOrReplace);
+            await _asyncStorageProvider.WriteAsync(filePath, inputStream, WriteMode.CreateOrReplace);
 
-            Assert.True(await _storageProvider.ExistsAsync(filePath));
+            Assert.True(await _asyncStorageProvider.ExistsAsync(filePath));
 
-            await _storageProvider.DeleteAsync(filePath);
+            await _asyncStorageProvider.DeleteAsync(filePath);
 
-            Assert.False(await _storageProvider.ExistsAsync(filePath));
+            Assert.False(await _asyncStorageProvider.ExistsAsync(filePath));
         }
 
         [Fact]
@@ -226,11 +226,11 @@ namespace FileParty.Providers.FileSystem.Tests
             var dirPath = $"{Guid.NewGuid()}";
             Directory.CreateDirectory(_baseDirectory + dirPath);
 
-            Assert.True(await _storageProvider.ExistsAsync(dirPath));
+            Assert.True(await _asyncStorageProvider.ExistsAsync(dirPath));
 
-            await _storageProvider.DeleteAsync(dirPath);
+            await _asyncStorageProvider.DeleteAsync(dirPath);
 
-            Assert.False(await _storageProvider.ExistsAsync(dirPath));
+            Assert.False(await _asyncStorageProvider.ExistsAsync(dirPath));
         }
 
         [Fact]
@@ -238,9 +238,9 @@ namespace FileParty.Providers.FileSystem.Tests
         {
             var path = $"{Guid.NewGuid()}";
 
-            Assert.False(await _storageProvider.ExistsAsync(path));
+            Assert.False(await _asyncStorageProvider.ExistsAsync(path));
 
-            await Assert.ThrowsAsync<StorageException>(async () => { await _storageProvider.DeleteAsync(path); });
+            await Assert.ThrowsAsync<StorageException>(async () => { await _asyncStorageProvider.DeleteAsync(path); });
         }
 
         [Fact]
@@ -257,12 +257,12 @@ namespace FileParty.Providers.FileSystem.Tests
 
             if (File.Exists(filePath)) File.Delete(filePath);
 
-            await _storageProvider.WriteAsync(
+            await _asyncStorageProvider.WriteAsync(
                 filePath,
                 inputStream,
                 WriteMode.Create);
 
-            var info1 = await _storageProvider.GetInformation(filePath);
+            var info1 = await _asyncStorageProvider.GetInformationAsync(filePath);
 
             Thread.Sleep(1000); // for obvious timestamp differences
 
@@ -272,12 +272,12 @@ namespace FileParty.Providers.FileSystem.Tests
             await replacementWriter.FlushAsync();
             replacementStream.Position = 0;
 
-            await _storageProvider.WriteAsync(
+            await _asyncStorageProvider.WriteAsync(
                 filePath,
                 replacementStream,
                 WriteMode.Replace);
 
-            var info2 = await _storageProvider.GetInformation(filePath);
+            var info2 = await _asyncStorageProvider.GetInformationAsync(filePath);
 
             Assert.Equal(name, info1.Name);
             Assert.Equal(info1.Name, info2.Name);

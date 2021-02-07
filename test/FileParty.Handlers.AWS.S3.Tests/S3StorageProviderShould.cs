@@ -13,7 +13,7 @@ namespace FileParty.Handlers.AWS.S3.Tests
 {
     public class S3StorageProviderShould
     {
-        private readonly IStorageProvider _storageProvider;
+        private readonly IAsyncStorageProvider _asyncStorageProvider;
 
         private readonly AWSAccessKeyConfiguration _config = new()
         {
@@ -25,7 +25,7 @@ namespace FileParty.Handlers.AWS.S3.Tests
 
         public S3StorageProviderShould()
         {
-            _storageProvider = new S3StorageProvider(_config);
+            _asyncStorageProvider = new S3StorageProvider(_config);
         }
 
         [Fact]
@@ -39,33 +39,33 @@ namespace FileParty.Handlers.AWS.S3.Tests
 
             var storagePointer =
                 "dir" +
-                _storageProvider.DirectorySeparatorCharacter +
+                _asyncStorageProvider.DirectorySeparatorCharacter +
                 nameof(CreateAFile_CheckIfFileExists_GetFileInfo_DeleteExistingFile);
 
-            _storageProvider.WriteProgressEvent += (_, args) =>
+            _asyncStorageProvider.WriteProgressEvent += (_, args) =>
             {
                 Assert.NotNull(args);
                 Debug.WriteLine(JsonSerializer.Serialize(args));
             };
 
-            await _storageProvider.WriteAsync(
+            await _asyncStorageProvider.WriteAsync(
                 storagePointer,
                 inputStream,
                 WriteMode.Create);
 
-            Assert.True(await _storageProvider.ExistsAsync(storagePointer));
+            Assert.True(await _asyncStorageProvider.ExistsAsync(storagePointer));
 
-            var info = await _storageProvider.GetInformation(storagePointer);
-            var info2 = await _storageProvider.GetInformation("dir");
+            var info = await _asyncStorageProvider.GetInformationAsync(storagePointer);
+            var info2 = await _asyncStorageProvider.GetInformationAsync("dir");
 
             Assert.Equal(nameof(CreateAFile_CheckIfFileExists_GetFileInfo_DeleteExistingFile), info.Name);
             Assert.Equal(12 * 1024, info.Size);
             Assert.Equal(StoredItemType.File, info.StoredType);
             Assert.Equal(StoredItemType.Directory, info2.StoredType);
 
-            await _storageProvider.DeleteAsync(storagePointer);
+            await _asyncStorageProvider.DeleteAsync(storagePointer);
 
-            Assert.False(await _storageProvider.ExistsAsync(storagePointer));
+            Assert.False(await _asyncStorageProvider.ExistsAsync(storagePointer));
         }
         
         [Fact]
@@ -79,7 +79,7 @@ namespace FileParty.Handlers.AWS.S3.Tests
 
             var storagePointerPrefix =
                 "dir2" +
-                _storageProvider.DirectorySeparatorCharacter +
+                _asyncStorageProvider.DirectorySeparatorCharacter +
                 "file_";
 
             for (var i = 0; i < 10; i++)
@@ -88,22 +88,22 @@ namespace FileParty.Handlers.AWS.S3.Tests
                 var stream = new MemoryStream();
                 await inputStream.CopyToAsync(stream);
                 
-                await _storageProvider.WriteAsync(
+                await _asyncStorageProvider.WriteAsync(
                     storagePointer,
                     stream,
                     WriteMode.Create);
 
                 inputStream.Position = 0;
                 
-                Assert.True(await _storageProvider.ExistsAsync(storagePointer));
+                Assert.True(await _asyncStorageProvider.ExistsAsync(storagePointer));
             }
 
-            Assert.True(_storageProvider.TryGetStoredItemType("dir2", out var type));
+            Assert.True(_asyncStorageProvider.TryGetStoredItemType("dir2", out var type));
             Assert.Equal(StoredItemType.Directory, type);
             
-            await _storageProvider.DeleteAsync("dir2");
+            await _asyncStorageProvider.DeleteAsync("dir2");
 
-            Assert.False(await _storageProvider.ExistsAsync("dir2"));
+            Assert.False(await _asyncStorageProvider.ExistsAsync("dir2"));
         }
     }
 }

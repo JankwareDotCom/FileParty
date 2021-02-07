@@ -21,6 +21,8 @@ ProjectSection(SolutionItems) = preProject
 	README.md = README.md
 EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileParty.Core.RegistrationTests", "test\FileParty.Core.RegistrationTests\FileParty.Core.RegistrationTests.csproj", "{C17D1DB1-7C20-413E-BC69-A0656720FA33}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{E557D9D3-A8B9-4D31-BD7A-631C13025ABA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E557D9D3-A8B9-4D31-BD7A-631C13025ABA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E557D9D3-A8B9-4D31-BD7A-631C13025ABA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C17D1DB1-7C20-413E-BC69-A0656720FA33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C17D1DB1-7C20-413E-BC69-A0656720FA33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C17D1DB1-7C20-413E-BC69-A0656720FA33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C17D1DB1-7C20-413E-BC69-A0656720FA33}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4ADB9737-3274-4E6C-ABA0-FE214D89807D} = {5C3F1ED6-EBB2-443C-8222-CC938FF2EB21}
@@ -50,5 +56,6 @@ Global
 		{792B430A-5277-44B8-9284-2D0C256DF22D} = {2982CF98-2817-4180-A8F6-1F66E2EAF92C}
 		{739F3D2D-5541-47A3-9C97-5329FB8583CE} = {5C3F1ED6-EBB2-443C-8222-CC938FF2EB21}
 		{E557D9D3-A8B9-4D31-BD7A-631C13025ABA} = {2982CF98-2817-4180-A8F6-1F66E2EAF92C}
+		{C17D1DB1-7C20-413E-BC69-A0656720FA33} = {2982CF98-2817-4180-A8F6-1F66E2EAF92C}
 	EndGlobalSection
 EndGlobal
