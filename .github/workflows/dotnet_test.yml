@@ -23,3 +23,8 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      env:
+        "fileparty_s3_region": ${{TEST_S3_REGION}}
+        "fileparty_s3_bucket": ${{TEST_S3_BUCKET}}
+        "fileparty_s3_access_key": ${{TEST_S3_ACCESS_KEY}}
+        "fileparty_s3_secret_key": ${{TEST_S3_SECRET_KEY}}
