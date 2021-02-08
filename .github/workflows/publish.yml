@@ -15,5 +15,5 @@ jobs:
           PROJECT_FILE_PATHS: './src/FileParty.Core/FileParty.Core.csproj,./src/FileParty.Providers.FileSystem/FileParty.Providers.FileSystem.csproj,./src/FileParty.Providers.AWS.S3/FileParty.Providers.AWS.S3.csproj'
           NUGET_SOURCE: ${{secrets.JANKWARE_NUGET_SOURCE}}
           NUGET_KEY: ${{secrets.JANKWARE_NUGET_API_KEY}}
-          #VERSION_REGEX: ''
+          VERSION_REGEX: '^\s*<Version>(.*)<\/Version>\s*$'
           INCLUDE_SYMBOLS: 'true'
