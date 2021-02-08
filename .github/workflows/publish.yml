@@ -16,4 +16,4 @@ jobs:
           NUGET_SOURCE: ${{secrets.JANKWARE_NUGET_SOURCE}}
           NUGET_KEY: ${{secrets.JANKWARE_NUGET_API_KEY}}
           #VERSION_REGEX: '^\s*<Version>(.*)<\/Version>\s*$'
-          INCLUDE_SYMBOLS: 'TRUE'
+          INCLUDE_SYMBOLS: 'true'
