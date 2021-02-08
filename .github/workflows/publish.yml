@@ -12,7 +12,7 @@ jobs:
         id: csharp_nuget_publish
         uses: JankwareDotCom/csharp_nuget_publish@0.1.2
         with: 
-          PROJECT_FILE_PATHS: 'SRC\FAKE.CSPROJ'
+          PROJECT_FILE_PATHS: 'src\FileParty.Core\FileParty.Core.csproj,src\FileParty.Providers.FileSystem\Fileparty.Providers.FileSystem.csproj,src\FileParty.Providers.AWS.S3\FileParty.Providers.ASW.S3.csproj'
           NUGET_SOURCE: ${{secrets.JANKWARE_NUGET_SOURCE}}
           NUGET_KEY: ${{secrets.JANKWARE_NUGET_API_KEY}}
           #VERSION_REGEX: ''
