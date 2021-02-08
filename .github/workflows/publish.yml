@@ -1,0 +1,19 @@
+name: csharp_nuget_plublish
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run a one-line script
+        id: csharp_nuget_publish
+        uses: JankwareDotCom/csharp_nuget_publish@0.1.2
+        with: 
+          PROJECT_FILE_PATHS: 'SRC\FAKE.CSPROJ'
+          NUGET_SOURCE: ${{secrets.JANKWARE_NUGET_SOURCE}}
+          NUGET_KEY: ${{secrets.JANKWARE_NUGET_API_KEY}}
+          #VERSION_REGEX: ''
+          INCLUDE_SYMBOLS: 'true'
