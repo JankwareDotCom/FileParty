@@ -6,3 +6,5 @@ riderModule.iml
 /FileParty.sln.DotSettings.user
 /.idea
 *.DotSettings
+*.nupkg
+*.snupkg
