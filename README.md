@@ -1,5 +1,8 @@
 # FileParty
 ![dotnet_test](https://github.com/JankwareDotCom/FileParty/workflows/dotnet_test/badge.svg)
+[![Nuget Package](https://badgen.net/nuget/v/FileParty.Core)](https://www.nuget.org/packages/FileParty.Core/)
+[![Nuget Package](https://badgen.net/nuget/v/FileParty.Providers.FileSystem)](https://www.nuget.org/packages/FileParty.Providers.FileSystem/)
+[![Nuget Package](https://badgen.net/nuget/v/FileParty.Providers.AWS.S3)](https://www.nuget.org/packages/FileParty.Providers.AWS.S3/)
 
 Providing a common set of methods for interacting with files across storage providers 
 
