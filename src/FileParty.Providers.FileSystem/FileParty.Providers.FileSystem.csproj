@@ -2,7 +2,10 @@
 
     <PropertyGroup>
         <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
-        <Version>0.1.0-pre</Version>
+        <Version>0.1.1-pre</Version>
+        <Description>Agnostic File Storage, Filesystem Module</Description>
+        <PackageProjectUrl>https://github.com/JankwareDotCom/FileParty</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/JankwareDotCom/FileParty</RepositoryUrl>
     </PropertyGroup>
 
     <ItemGroup>
