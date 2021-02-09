@@ -1,8 +1,11 @@
 # FileParty
 ![dotnet_test](https://github.com/JankwareDotCom/FileParty/workflows/dotnet_test/badge.svg)
-[![Nuget Package](https://badgen.net/nuget/v/FileParty.Core)](https://www.nuget.org/packages/FileParty.Core/)
-[![Nuget Package](https://badgen.net/nuget/v/FileParty.Providers.FileSystem)](https://www.nuget.org/packages/FileParty.Providers.FileSystem/)
-[![Nuget Package](https://badgen.net/nuget/v/FileParty.Providers.AWS.S3)](https://www.nuget.org/packages/FileParty.Providers.AWS.S3/)
+
+| Package | Description | Version |
+| ------- | ----------- | ------- |
+|FileParty.Core|Registration, Factory, and Watcher|[![Nuget Package](https://badgen.net/nuget/v/FileParty.Core)](https://www.nuget.org/packages/FileParty.Core/)|
+|FileParty.Providers.FileSystem|Storage Providers for FileSystem|[![Nuget Package](https://badgen.net/nuget/v/FileParty.Providers.FileSystem)](https://www.nuget.org/packages/FileParty.Providers.FileSystem/)|
+|FileParty.Providers.AWS.S3|Storage Providers for AWS S3 Buckets|[![Nuget Package](https://badgen.net/nuget/v/FileParty.Providers.AWS.S3)](https://www.nuget.org/packages/FileParty.Providers.AWS.S3/)|
 
 Providing a common set of methods for interacting with files across storage providers 
 
