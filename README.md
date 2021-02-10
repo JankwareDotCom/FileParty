@@ -10,22 +10,60 @@
 Providing a common set of methods for interacting with files across storage providers 
 
 ## How to Use
-FileParty uses `Microsoft.Extensions.DependencyInjection` to register itself.  If your project does not, 
-do not worry, everything can be self-contained.
 
-Register File Party by calling `this.AddFileParty()` either on an existing `IServiceCollection` or any object. 
-If `this` is not an `IServiceCollection` a new Service Collection will be made.
+### Registration
+FileParty uses `Microsoft.Extensions.DependencyInjection` to register itself.  Dependency Injection is not explicitly required to use FileParty.
 
-Register each desired module calling a configuration action `x => x.AddModule<ModuleName>(defaultConfigObject)`
-which will register that module configuration with the Service Collection. Any quantity of modules may be added this way.
+Register File Party by calling `this.AddFileParty()` either on an existing `IServiceCollection` or any object. If `this` is not an `IServiceCollection` 
+a new Service Collection will be made and returned as a result of the method call; When not using Dependency Injection, make sure to assign this to a
+variable.
+
+Register each desired module calling a configuration action `x => x.AddModule<ModuleName>(defaultConfigObject)` where `defaultConfigObject` is 
+a `StorageProviderConfiguration<TModule>`
+
+This command which will register a given module and its storage providers with the Service Collection. Any quantity of modules may be added this way.
+
+If desired, a default module may be specified, when provided this module will be the default storage provider type provided when either 
+`FilePartyFactory` or `AsyncFilePartyFactory` returns a storage provider.  When not provided, the default module shall be the last module loaded using the 
+`AddModule<TModule>(config)` command.
 
 ```c#
-this.AddFileParty(x => 
-    x.AddModule<FileSystemModule>(new FileSystemConfiguration("C:\FilePartyBaseDirectory"))
+this.AddFileParty(config => 
+    config.AddModule<FileSystemModule>(new FileSystemConfiguration("C:\FilePartyBaseDirectory"))
+          .SetDefaultModule<FilePartyModule>()
+    
+    )
 ```
 
-When you need access to an `IAsyncStorageProvider` or `IStorageProvider` simply DI either an `IAsyncFilePartyFactory` 
-or an `IFilePartyFactory` and call use one of its methods to get a Storage Provider, Storage Reader, or Storage Writer.
+### Getting a Storage Provider
+When you need access to an `IAsyncStorageProvider` or `IStorageProvider` there are a few options:
+- Use Dependency Injection for either an `IAsyncStorageProvider` or `IStorageProvider` and the appropriate factory will 
+  return a instance from the default module, or 
+- Use Dependency Injection for either an `IAsyncFilePartyFactory` or `IFilePartyFactory` and call one of the following methods:
+  - `GetAsyncStorageProvider()` or `GetStorageProvider()` to get a storage provider from the default module with the default 
+    configuration for that module, or
+  - `GetAsyncStorageProvider<TModule>()` or `GetStorageProvider<TModule>()` to get a storage provider from a specified module 
+    with the default configuration for that module, or
+  - `GetAsyncStorageProvider<TModule>(StorageProviderConfiguration<TModule>)` or `GetStorageProvider<TModule>(StorageProviderConfiguration<TModule>)`
+    to get a storage provider from a specified module with a specified configuration.
+    
+The following methods are also available in the factory to return a more limited action set from the storage provider
+- Storage Readers, which include methods to check to see if a file exists, to read a file stream, and get information about a file 
+  - `GetAsyncStorageReader()` or `GetStorageReader()`
+  - `GetAsyncStorageReader<TModule>()` or `GetStorageReader<TModule>()`
+  - `GetAsyncStorageReader<TModule>(StorageProviderConfiguration<TModule>)` or `GetStorageReader<TModule>(StorageProviderConfiguration<TModule>)`
+- Storage Writers, which include methods to Write and Delete a file stream
+  - `GetAsyncStorageWriter()` or `GetStorageWriter()`
+  - `GetAsyncStorageWriter<TModule>()` or `GetStorageWriter<TModule>()`
+  - `GetAsyncStorageWriter<TModule>(StorageProviderConfiguration<TModule>)` or `GetStorageWriter<TModule>(StorageProviderConfiguration<TModule>)`
+
+### Subscribing to Write Progress Status
+Use Dependency Injection to get an `IWriteProgressSubscriptionManager`.  Use a delegate to subscribe to all or some write progress events.  Each module should
+have write progress updates implemented.  When creating a `FilePartyWriteRequest` use this Id to subscribe to write progress updates for a specific file stream.
+
+### Changing Default Configs On-The-Fly
+Use Dependency Injection to get an `IFilePartyFactoryModifier` and use the sole method to set a new default module and configuration.  This will change which 
+Storage Providers are returned by the default factory methods.
 
 ## How to Extend
 
@@ -35,6 +73,9 @@ Create a project that implements:
 - BaseStorageProvider
 - BaseFilePartyModule
 
+Please be mindful to include updates for write progress.
+
+Additional services may be registered in the module's independent service collection.
+
 ## Questions / Issues / Concerns
 Just make an issue on the Repo.  Contributions are welcome.
-
