@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using FileParty.Core.EventArgs;
 using FileParty.Core.Factory;
 using FileParty.Core.Interfaces;
 using FileParty.Core.Models;
@@ -112,6 +111,8 @@ namespace FileParty.Core.Registration
             serviceCollection.TryAddSingleton<IFilePartyFactory, FilePartyFactory>();
             serviceCollection.TryAddSingleton<IAsyncFilePartyFactory, AsyncFilePartyFactory>();
             serviceCollection.TryAddSingleton<IFilePartyFactoryModifier, FilePartyFactoryModifier>();
+            serviceCollection.AddTransient<IStorageProvider>(s => s.GetRequiredService<IFilePartyFactory>().GetStorageProvider());
+            serviceCollection.AddTransient<IAsyncStorageProvider>(s => s.GetRequiredService<IAsyncFilePartyFactory>().GetAsyncStorageProvider().Result);
             
             return serviceCollection;
         }

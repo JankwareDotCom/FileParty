@@ -10,6 +10,42 @@ namespace FileParty.Core.RegistrationTests
     public class FilePartyRegistrationShould
     {
         [Fact]
+        public async Task RegisterAStorageProviderWithTheMainServiceCollection()
+        {
+            var sc = this.AddFileParty(cfg =>
+            {
+                cfg.AddModule<TestModule2>(new TestConfiguration2());
+                cfg.AddModule<TestModule>(new TestConfiguration());
+            });
+
+            await using var sp = sc.BuildServiceProvider();
+            var storageProvider = sp.GetRequiredService<IStorageProvider>();
+            
+            Assert.True(storageProvider is TestStorageProvider);
+        }
+        
+        [Fact]
+        public async Task ChangeDefaultStorageProvider()
+        {
+            var sc = this.AddFileParty(cfg =>
+            {
+                cfg.AddModule<TestModule2>(new TestConfiguration2());
+                cfg.AddModule<TestModule>(new TestConfiguration());
+            });
+
+            await using var sp = sc.BuildServiceProvider();
+            var storageProvider = sp.GetRequiredService<IStorageProvider>();
+            
+            Assert.True(storageProvider is TestStorageProvider);
+            
+            var factoryReConfig = sp.GetRequiredService<IFilePartyFactoryModifier>();
+            factoryReConfig.ChangeDefaultModuleConfig(new TestConfiguration2());
+            storageProvider = sp.GetRequiredService<IStorageProvider>();
+            
+            Assert.True(storageProvider is TestStorageProvider2);
+        }
+        
+        [Fact]
         public async Task RegisterAFilePartyConfigAndConfigForEachModuleRegistered()
         {
             var sc = this.AddFileParty(cfg =>
