@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run a one-line script
+      - name: Build and Publish Nuget Packages
         id: csharp_nuget_publish
         uses: JankwareDotCom/csharp_nuget_publish@0.2.17
         with: 
@@ -18,6 +18,6 @@ jobs:
           #VERSION_REGEX: '^\s*<Version>(.*)<\/Version>\s*$'
           INCLUDE_SYMBOLS: 'true'
           TAG_COMMIT: 'develop,main'
-          TAG_FORMAT: '*'
-          BRANCH_VERSION_SUFFIXES: 'develop=-pre'
+          TAG_FORMAT: v*'
+          BRANCH_VERSION_SUFFIXES: 'develop=pre'
           REPO_TOKEN: ${{secrets.GITHUB_TOKEN}}
