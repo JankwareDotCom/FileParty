@@ -78,4 +78,17 @@ Please be mindful to include updates for write progress.
 Additional services may be registered in the module's independent service collection.
 
 ## Questions / Issues / Concerns
-Just make an issue on the Repo.  Contributions are welcome.
+Just make an issue on the Repo.  
+- Contributions are welcome.  
+- Please make PRs into develop and remember to increment the version number for each project.
+- Please name branches in the following formats 
+ - /bugfix/issue-fixed
+ - /feature/feature-added
+- Release PRs will go into main
+- Please write unit tests
+- If adding a new storage provider
+ - please make a new repository
+ - use the following namespace format, marking External as it is not maintained by Jankware: FileParty.Providers.External.YourProvider
+  - let us know about it, we're very interested
+  - we may ask to make this part of the core code in the future
+ 
