@@ -18,6 +18,6 @@ jobs:
           #VERSION_REGEX: '^\s*<Version>(.*)<\/Version>\s*$'
           INCLUDE_SYMBOLS: 'true'
           TAG_COMMIT: 'develop,main'
-          TAG_FORMAT: v*'
+          TAG_FORMAT: 'v*'
           BRANCH_VERSION_SUFFIXES: 'develop=pre'
           REPO_TOKEN: ${{secrets.GITHUB_TOKEN}}
