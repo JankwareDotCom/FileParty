@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run a one-line script
         id: csharp_nuget_publish
-        uses: JankwareDotCom/csharp_nuget_publish@0.2.3
+        uses: JankwareDotCom/csharp_nuget_publish@0.2.4
         with: 
           PROJECT_FILE_PATHS: './src/FileParty.Core/FileParty.Core.csproj,./src/FileParty.Providers.FileSystem/FileParty.Providers.FileSystem.csproj,./src/FileParty.Providers.AWS.S3/FileParty.Providers.AWS.S3.csproj'
           NUGET_SOURCE: ${{secrets.JANKWARE_NUGET_SOURCE}}
