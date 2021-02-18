@@ -1,11 +1,13 @@
 name: csharp_nuget_publish
 on:
-  push:
+  pull_request:
     branches: ['main','develop']
-
+    types: [merged]
+    
 jobs:
   publish:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v2
       - name: Build and Publish Nuget Packages
