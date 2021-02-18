@@ -83,7 +83,7 @@ namespace FileParty.Providers.FileSystem
 
             if (type != StoredItemType.File) throw Errors.MustBeFile;
 
-            using Stream fs = File.OpenRead(storagePointer);
+            Stream fs = File.OpenRead(storagePointer);
             return Task.FromResult(fs);
         }
 
