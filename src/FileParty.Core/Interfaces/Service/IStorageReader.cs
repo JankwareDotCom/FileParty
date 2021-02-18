@@ -8,7 +8,7 @@ namespace FileParty.Core.Interfaces
     public interface IStorageReader : IUseDirectorySeparatorCharacter
     {
         /// <summary>
-        /// Get a stream of a file from the storage provider
+        /// Get a stream of a file from the storage provider; ; This will need disposed.
         /// </summary>
         /// <param name="storagePointer">Generally the path where the file is stored</param>
         /// <returns></returns>

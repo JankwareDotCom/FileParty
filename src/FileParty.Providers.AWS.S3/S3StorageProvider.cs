@@ -81,7 +81,7 @@ namespace FileParty.Providers.AWS.S3
 
             using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
             using var response = await s3Client.GetObjectAsync(getRequest, cancellationToken);
-            await using var responseStream = response.ResponseStream;
+            var responseStream = response.ResponseStream;
             return responseStream;
         }
 

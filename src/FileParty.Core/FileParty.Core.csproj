@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <Version>0.1.2</Version>
+        <Version>0.1.3</Version>
         <Authors>Jankware</Authors>
         <Description>Agnostic File Storage, Core Project, Service Registration</Description>
         <PackageProjectUrl>https://github.com/JankwareDotCom/FileParty</PackageProjectUrl>
