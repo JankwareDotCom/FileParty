@@ -21,5 +21,5 @@ jobs:
           INCLUDE_SYMBOLS: 'true'
           TAG_COMMIT: 'develop,main'
           TAG_FORMAT: 'v*'
-          BRANCH_VERSION_SUFFIXES: 'develop={yyoooHHmm}-*-pre'
+          BRANCH_VERSION_SUFFIXES: 'develop=pre-{yyoooHHmm}-*'
           REPO_TOKEN: ${{secrets.GITHUB_TOKEN}}
