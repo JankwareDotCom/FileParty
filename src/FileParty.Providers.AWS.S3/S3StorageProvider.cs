@@ -81,8 +81,10 @@ namespace FileParty.Providers.AWS.S3
 
             using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
             using var response = await s3Client.GetObjectAsync(getRequest, cancellationToken);
-            var responseStream = response.ResponseStream;
-            return responseStream;
+            var resultStream = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(resultStream, cancellationToken);
+            resultStream.Position = 0;
+            return resultStream;
         }
 
         public virtual async Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
