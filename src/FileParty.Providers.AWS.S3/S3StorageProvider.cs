@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -247,9 +248,7 @@ namespace FileParty.Providers.AWS.S3
             try
             {
                 using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
-
                 var result = new StoredItemInformation();
-
 
                 try
                 {
@@ -329,12 +328,24 @@ namespace FileParty.Providers.AWS.S3
 
         protected virtual AWSCredentials GetAmazonCredentials()
         {
-            if (_config is AWSAccessKeyConfiguration accessKeyConfiguration)
+            try
             {
-                return new BasicAWSCredentials(accessKeyConfiguration.AccessKey, accessKeyConfiguration.SecretKey);
-            }
+                if (_config is AWSAccessKeyConfiguration accessKeyConfiguration)
+                {
+                    return new BasicAWSCredentials(accessKeyConfiguration.AccessKey, accessKeyConfiguration.SecretKey);
+                }
 
-            throw Errors.InvalidConfiguration;
+                if (_config is AWSDefaultConfiguration defaultConfiguration)
+                {
+                    return FallbackCredentialsFactory.GetCredentials(false);
+                }
+            }
+            catch (Exception)
+            {
+                throw Errors.InvalidConfiguration;    
+            }
+            
+            throw Errors.InvalidConfiguration;    
         }
 
         protected virtual IAWSBucketInformation GetBucketInfo()

@@ -41,7 +41,17 @@ namespace FileParty.Handlers.AWS.S3.Tests
         [Fact]
         public async Task CreateAFile_CheckIfFileExists_GetFileInfo_DeleteExistingFile()
         {
-            await _asyncStorageProvider.DeleteAsync("dir");
+            if (await _asyncStorageProvider.ExistsAsync("dir"))
+            {
+                try
+                {
+                    await _asyncStorageProvider.DeleteAsync("dir");
+                }
+                catch (Exception e)
+                {
+                    _testOutputHelper.WriteLine(e.ToString());
+                }
+            }
             await using var inputStream = new MemoryStream();
             await using var inputWriter = new StreamWriter(inputStream);
             await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
