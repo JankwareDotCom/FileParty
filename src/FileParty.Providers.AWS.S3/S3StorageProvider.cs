@@ -340,7 +340,7 @@ namespace FileParty.Providers.AWS.S3
                     return FallbackCredentialsFactory.GetCredentials(false);
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw Errors.InvalidConfiguration;    
             }
