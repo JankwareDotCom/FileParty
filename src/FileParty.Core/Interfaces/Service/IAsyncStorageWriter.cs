@@ -16,7 +16,9 @@ namespace FileParty.Core.Interfaces
         /// </summary>
         /// <param name="request">Write Request Model</param>
         /// <param name="cancellationToken">Cancellation Token</param>
-        Task WriteAsync(FilePartyWriteRequest request, CancellationToken cancellationToken);
+        Task WriteAsync(
+            FilePartyWriteRequest request, 
+            CancellationToken cancellationToken = default);
         
         /// <summary>
         /// Write a stream to a storage provider
