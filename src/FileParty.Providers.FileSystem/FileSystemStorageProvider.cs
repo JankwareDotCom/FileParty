@@ -24,7 +24,7 @@ namespace FileParty.Providers.FileSystem
         
         public virtual char DirectorySeparatorCharacter { get; }
 
-        public async Task WriteAsync(FilePartyWriteRequest request, CancellationToken cancellationToken)
+        public async Task WriteAsync(FilePartyWriteRequest request, CancellationToken cancellationToken = default)
         {
             var storagePointer = request.StoragePointer;
             var writeMode = request.WriteMode;
