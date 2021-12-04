@@ -1,14 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-
         <IsPackable>false</IsPackable>
-
         <AssemblyName>FileParty.Providers.FileSystem.Tests</AssemblyName>
-
         <RootNamespace>FileParty.Providers.FileSystem.Tests</RootNamespace>
-
-        <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
+        <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
