@@ -1,11 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <RestoreAdditionalProjectSources>
-            $(RestoreSources);
-            ../../src/FileParty.Providers.AWS.S3/bin/Debug;
-            https://api.nuget.org/v3/index.json;
-            </RestoreAdditionalProjectSources>
         <TargetFrameworks>net5.0;net6.0</TargetFrameworks>
     </PropertyGroup>
 
@@ -16,7 +11,6 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-<!--        <PackageReference Include="FileParty.Providers.AWS.S3" Version="0.0.0" />-->
     </ItemGroup>
 
     <ItemGroup>
