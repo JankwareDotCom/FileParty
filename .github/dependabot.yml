@@ -8,12 +8,12 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/src/FileParty.Core"
     schedule:
-      interval: "daily"
+      interval: "monthly"
   - package-ecosystem: "nuget"
     directory: "/src/FileParty.Providers.FileSystem"
     schedule:
-      interval: "daily"
+      interval: "monthly"
   - package-ecosystem: "nuget"
     directory: "/src/FileParty.Providers.AWS.S3"
     schedule:
-      interval: "daily"
+      interval: "monthly"

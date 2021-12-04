@@ -21,7 +21,8 @@ namespace FileParty.Providers.AWS.S3
 {
     public class S3StorageProvider : IAsyncStorageProvider, IStorageProvider
     {
-        
+
+        private const int BufferSize = 81920;
         private StorageProviderConfiguration<AWS_S3Module> _config;
 
         public S3StorageProvider(StorageProviderConfiguration<AWS_S3Module> awsConfiguration)
@@ -57,9 +58,11 @@ namespace FileParty.Providers.AWS.S3
             }
                 
             var creds = GetAmazonCredentials();
-            using var s3Client = new AmazonS3Client(creds, GetBucketInfo().GetRegionEndpoint());
-            using var transferUtility = new TransferUtility(s3Client);
-            await transferUtility.UploadAsync(transferRequest, cancellationToken);
+            using (var s3Client = new AmazonS3Client(creds, GetBucketInfo().GetRegionEndpoint()))
+            using (var transferUtility = new TransferUtility(s3Client))
+            {
+                await transferUtility.UploadAsync(transferRequest, cancellationToken);
+            }
         }
 
         public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
@@ -80,12 +83,15 @@ namespace FileParty.Providers.AWS.S3
                 Key = storagePointer
             };
 
-            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
-            using var response = await s3Client.GetObjectAsync(getRequest, cancellationToken);
-            var resultStream = new MemoryStream();
-            await response.ResponseStream.CopyToAsync(resultStream, cancellationToken);
-            resultStream.Position = 0;
-            return resultStream;
+            using (var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint()))
+            using (var response = await s3Client.GetObjectAsync(getRequest, cancellationToken))
+            {
+                var resultStream = new MemoryStream();
+                await response.ResponseStream.CopyToAsync(resultStream, BufferSize, cancellationToken);
+                resultStream.Position = 0;
+                return resultStream;    
+            }
+            
         }
 
         public virtual async Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
@@ -98,34 +104,35 @@ namespace FileParty.Providers.AWS.S3
                 Key = storagePointer
             };
 
-            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
-
-            if (info.StoredType == StoredItemType.File)
+            using (var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint()))
             {
-                await s3Client.DeleteObjectAsync(deleteRequest, cancellationToken);
-            }
-            else
-            {
-                var prefix = storagePointer.EndsWith(DirectorySeparatorCharacter)
-                    ? storagePointer
-                    : storagePointer + DirectorySeparatorCharacter;
-
-                while (true)
+                if (info.StoredType == StoredItemType.File)
                 {
-                    var directoryContents = await s3Client
-                        .ListObjectsV2Async(new ListObjectsV2Request
-                        {
-                            BucketName = GetBucketInfo().Name,
-                            MaxKeys = 1000,
-                            Prefix = prefix,
-
-                        }, cancellationToken)
-                        .ConfigureAwait(false);
-
-                    if (!directoryContents.S3Objects.Any()) break;
-
-                    await DeleteAsync(directoryContents.S3Objects.Select(s => s.Key).ToArray(), cancellationToken);
+                    await s3Client.DeleteObjectAsync(deleteRequest, cancellationToken);
                 }
+                else
+                {
+                    var prefix = storagePointer.EndsWith(DirectorySeparatorCharacter.ToString())
+                        ? storagePointer
+                        : storagePointer + DirectorySeparatorCharacter;
+
+                    while (true)
+                    {
+                        var directoryContents = await s3Client
+                            .ListObjectsV2Async(new ListObjectsV2Request
+                            {
+                                BucketName = GetBucketInfo().Name,
+                                MaxKeys = 1000,
+                                Prefix = prefix,
+
+                            }, cancellationToken)
+                            .ConfigureAwait(false);
+
+                        if (!directoryContents.S3Objects.Any()) break;
+
+                        await DeleteAsync(directoryContents.S3Objects.Select(s => s.Key).ToArray(), cancellationToken);
+                    }
+                }    
             }
         }
 
@@ -148,31 +155,33 @@ namespace FileParty.Providers.AWS.S3
                     .Select(s => new KeyVersion {Key = s.Key})
                     .ToList()
             };
-            using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
-            await s3Client.DeleteObjectsAsync(deleteRequest, cancellationToken);
-
-            foreach (var dir in storagePointerTypeDict
-                .Where(w => w.Value == StoredItemType.Directory))
+            using (var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint()))
             {
-                var prefix = dir.Key.EndsWith(DirectorySeparatorCharacter)
-                    ? dir.Key
-                    : dir.Key + DirectorySeparatorCharacter;
+                await s3Client.DeleteObjectsAsync(deleteRequest, cancellationToken);
                 
-                while (true)
+                foreach (var dir in storagePointerTypeDict
+                    .Where(w => w.Value == StoredItemType.Directory))
                 {
-                    var directoryContents = await s3Client
-                        .ListObjectsV2Async(new ListObjectsV2Request
-                        {
-                            BucketName = GetBucketInfo().Name,
-                            MaxKeys = 1000,
-                            Prefix = prefix,
+                    var prefix = dir.Key.EndsWith(DirectorySeparatorCharacter.ToString())
+                        ? dir.Key
+                        : dir.Key + DirectorySeparatorCharacter;
+                
+                    while (true)
+                    {
+                        var directoryContents = await s3Client
+                            .ListObjectsV2Async(new ListObjectsV2Request
+                            {
+                                BucketName = GetBucketInfo().Name,
+                                MaxKeys = 1000,
+                                Prefix = prefix,
 
-                        }, cancellationToken)
-                        .ConfigureAwait(false);
+                            }, cancellationToken)
+                            .ConfigureAwait(false);
 
-                    if (!directoryContents.S3Objects.Any()) break;
+                        if (!directoryContents.S3Objects.Any()) break;
 
-                    await DeleteAsync(directoryContents.S3Objects.Select(s => s.Key).ToArray(), cancellationToken);
+                        await DeleteAsync(directoryContents.S3Objects.Select(s => s.Key).ToArray(), cancellationToken);
+                    }
                 }
             }
         }
@@ -247,44 +256,46 @@ namespace FileParty.Providers.AWS.S3
         {
             try
             {
-                using var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint());
                 var result = new StoredItemInformation();
-
-                try
+                using (var s3Client = new AmazonS3Client(GetAmazonCredentials(), GetBucketInfo().GetRegionEndpoint()))
                 {
-                    var omInfo = await s3Client
-                        .GetObjectMetadataAsync(GetBucketInfo().Name, storagePointer, cancellationToken)
-                        .ConfigureAwait(false);
+                    try
+                    {
+                        var omInfo = await s3Client
+                            .GetObjectMetadataAsync(GetBucketInfo().Name, storagePointer, cancellationToken)
+                            .ConfigureAwait(false);
 
-                    result.StoredType = StoredItemType.File;
-                    result.Size = omInfo.ContentLength;
-                    result.LastModifiedTimestamp = omInfo.LastModified.ToUniversalTime();
-                    result.StoragePointer = storagePointer;
-                }
-                catch (AmazonS3Exception s3Exception) when (s3Exception.StatusCode == HttpStatusCode.NotFound)
-                {
-                    storagePointer = storagePointer.EndsWith(DirectorySeparatorCharacter)
-                        ? storagePointer
-                        : storagePointer + DirectorySeparatorCharacter;
+                        result.StoredType = StoredItemType.File;
+                        result.Size = omInfo.ContentLength;
+                        result.LastModifiedTimestamp = omInfo.LastModified.ToUniversalTime();
+                        result.StoragePointer = storagePointer;
+                    }
+                    catch (AmazonS3Exception s3Exception) when (s3Exception.StatusCode == HttpStatusCode.NotFound)
+                    {
+                        storagePointer = storagePointer.EndsWith(DirectorySeparatorCharacter.ToString())
+                            ? storagePointer
+                            : storagePointer + DirectorySeparatorCharacter;
 
-                    var loInfo = await s3Client
-                        .ListObjectsAsync(GetBucketInfo().Name, storagePointer, cancellationToken)
-                        .ConfigureAwait(false);
+                        var loInfo = await s3Client
+                            .ListObjectsAsync(GetBucketInfo().Name, storagePointer, cancellationToken)
+                            .ConfigureAwait(false);
 
-                    if (!loInfo.S3Objects.Any()) throw;
+                        if (!loInfo.S3Objects.Any()) throw;
 
-                    result.StoredType = StoredItemType.Directory;
-                    result.Size = null;
+                        result.StoredType = StoredItemType.Directory;
+                        result.Size = null;
+                    }    
                 }
 
                 var pathParts =
                     storagePointer
-                        .Split(DirectorySeparatorCharacter, StringSplitOptions.RemoveEmptyEntries)
+                        .Split(DirectorySeparatorCharacter)
+                        .Where(part => !string.IsNullOrWhiteSpace(part))
                         .ToList();
 
                 var name = pathParts.Last();
                 pathParts.Remove(name);
-                var dirPath = string.Join(DirectorySeparatorCharacter, pathParts);
+                var dirPath = string.Join(DirectorySeparatorCharacter.ToString(), pathParts);
 
                 if (result.StoredType == StoredItemType.Directory) name += DirectorySeparatorCharacter;
 

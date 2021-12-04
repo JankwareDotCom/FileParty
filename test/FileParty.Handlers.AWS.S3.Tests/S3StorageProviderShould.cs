@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using FileParty.Core.Enums;
 using FileParty.Core.Interfaces;
 using FileParty.Core.Registration;
-using FileParty.Providers.AWS.S3;
 using FileParty.Providers.AWS.S3.Config;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -95,7 +94,7 @@ namespace FileParty.Handlers.AWS.S3.Tests
             
             Assert.NotNull(base64);
             
-            var utfEight = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(base64));
+            var utfEight = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
 
             Assert.True(utfEight.All(a=>a.Equals('*')));
             

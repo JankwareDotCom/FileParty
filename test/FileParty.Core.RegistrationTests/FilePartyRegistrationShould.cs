@@ -46,7 +46,7 @@ namespace FileParty.Core.RegistrationTests
         }
         
         [Fact]
-        public async Task RegisterAFilePartyConfigAndConfigForEachModuleRegistered()
+        public Task RegisterAFilePartyConfigAndConfigForEachModuleRegistered()
         {
             var sc = this.AddFileParty(cfg =>
             {
@@ -68,6 +68,8 @@ namespace FileParty.Core.RegistrationTests
 
             Assert.Single(descriptors.Where(w => w.ServiceType == typeof(IFilePartyFactory)));
             Assert.Single(descriptors.Where(w => w.ServiceType == typeof(IAsyncFilePartyFactory)));
+
+            return Task.CompletedTask;
         }
         
         [Fact]

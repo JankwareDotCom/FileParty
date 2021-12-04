@@ -44,6 +44,6 @@ namespace FileParty.Core.Interfaces
         /// <summary>
         ///     Misc. Properties of this StoredItem
         /// </summary>
-        public Dictionary<string, object> Properties { get; }
+        Dictionary<string, object> Properties { get; }
     }
 }
