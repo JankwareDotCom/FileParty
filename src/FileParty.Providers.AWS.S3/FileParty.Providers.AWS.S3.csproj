@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net5.0;netstandard2.1</TargetFrameworks>
-        <Version>1.0.3</Version>
+        <TargetFrameworks>net5.0;net6.0;netstandard2.0;netstandard2.1</TargetFrameworks>
+        <Version>1.1.0</Version>
         <Description>Agnostic File Storage, AWS S3 Module</Description>
         <PackageProjectUrl>https://github.com/JankwareDotCom/FileParty</PackageProjectUrl>
         <RepositoryUrl>https://github.com/JankwareDotCom/FileParty</RepositoryUrl>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageVersion>0</PackageVersion>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,7 +15,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AWSSDK.S3" Version="3.7.0.32" />
+      <PackageReference Include="AWSSDK.S3" Version="3.7.*" 
+                        IncludeAssets="all"
+                        PrivateAssets="compile"/>
     </ItemGroup>
 
 </Project>
