@@ -10,6 +10,10 @@ jobs:
     if: github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
       - name: Build and Publish Nuget Packages
         id: csharp_nuget_publish
         uses: JankwareDotCom/nuget_publish@0.4.0

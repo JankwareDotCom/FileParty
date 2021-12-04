@@ -7,16 +7,19 @@ namespace FileParty.Providers.AWS.S3.Config
         /// <summary>
         ///     AWS Region Endpoint System Name.  e.g. us-west-1
         /// </summary>
-        public string Region { get; set; }
+        string Region { get; set; }
 
         /// <summary>
         ///     Bucket Name
         /// </summary>
-        public string Name { get; set; }
-
-        internal RegionEndpoint GetRegionEndpoint()
+        string Name { get; set; }
+    }
+    
+    internal static class IAWSBucketInformationExtension
+    {
+        public static RegionEndpoint GetRegionEndpoint(this IAWSBucketInformation bucketInformation)
         {
-            return RegionEndpoint.GetBySystemName(Region);
+            return RegionEndpoint.GetBySystemName(bucketInformation.Region);
         }
     }
 }

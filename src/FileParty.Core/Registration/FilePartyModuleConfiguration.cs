@@ -38,21 +38,24 @@ namespace FileParty.Core.Registration
             var config = configuration ?? _defaultConfiguration;
             sc.AddSingleton<StorageProviderConfiguration<TModule>>(x => config);
             sc.AddSingleton<IStorageProviderConfiguration>(x => config);
-            using var sp = sc.BuildServiceProvider();
-            var service = sp.GetRequiredService<IStorageProvider>();
-            
-            return service;
+            using (var sp = sc.BuildServiceProvider())
+            {
+                var service = sp.GetRequiredService<IStorageProvider>();
+                return service;
+            }
         }
         
-        internal async Task<IAsyncStorageProvider> GetAsyncStorageProvider(StorageProviderConfiguration<TModule> configuration)
+        internal Task<IAsyncStorageProvider> GetAsyncStorageProvider(StorageProviderConfiguration<TModule> configuration)
         {
             var sc = new ServiceCollection {GetServiceCollection()};
             var config = configuration ?? _defaultConfiguration;
             sc.AddSingleton<StorageProviderConfiguration<TModule>>(x => config);
             sc.AddSingleton<IStorageProviderConfiguration>(x => config);
-            await using var sp = sc.BuildServiceProvider();
-            var service = sp.GetRequiredService<IAsyncStorageProvider>();
-            return service;
+            using (var sp = sc.BuildServiceProvider())
+            {
+                var service = sp.GetRequiredService<IAsyncStorageProvider>();
+                return Task.FromResult(service);    
+            }
         }
 
         public IStorageProvider GetStorageProvider()
