@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net5.0;net6.0;netstandard2.0;netstandard2.1</TargetFrameworks>
-        <Version>1.1.2</Version>
+        <Version>1.1.1</Version>
         <Description>Agnostic File Storage, AWS S3 Module</Description>
         <PackageProjectUrl>https://github.com/JankwareDotCom/FileParty</PackageProjectUrl>
         <RepositoryUrl>https://github.com/JankwareDotCom/FileParty</RepositoryUrl>
