@@ -139,5 +139,27 @@ namespace FileParty.Handlers.AWS.S3.Tests
 
             Assert.False(await _asyncStorageProvider.ExistsAsync("dir2"));
         }
+        
+        [Fact]
+        public async Task AllowNullConfigOnRegistration()
+        {
+            var sc = this.AddFileParty(cfg =>
+            {
+                cfg.AddModule<FileParty.Providers.AWS.S3.AWS_S3Module>(null);
+            });
+            
+            await using var sp = sc.BuildServiceProvider();
+            var factory = sp.GetRequiredService<IFilePartyFactory>();
+            
+            Assert.NotNull(factory.GetStorageProvider());
+            Assert.NotNull(factory.GetStorageProvider(new AWSDefaultConfiguration()));
+            Assert.NotNull(factory.GetStorageProvider(new AWSAccessKeyConfiguration
+            {
+                AccessKey = "fake",
+                Name = "obviously fake",
+                Region = "us-west-2",
+                SecretKey = "fake"
+            }));
+        }
     }
 }
