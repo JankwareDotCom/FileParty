@@ -14,10 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AWSSDK.S3" Version="[3.3,4)" 
-                        IncludeAssets="all"
-                        PrivateAssets="compile"
-                        />
+      <PackageReference Include="AWSSDK.S3" Version="[3.3,4)" IncludeAssets="all" PrivateAssets="compile" />
+      <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*" />
     </ItemGroup>
 
 </Project>
