@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>1.1.0</Version>
+        <Version>1.1.2</Version>
         <Authors>Jankware</Authors>
         <Description>Agnostic File Storage, Core Project, Service Registration</Description>
         <PackageProjectUrl>https://github.com/JankwareDotCom/FileParty</PackageProjectUrl>
