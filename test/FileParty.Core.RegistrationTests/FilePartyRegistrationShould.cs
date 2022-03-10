@@ -153,5 +153,22 @@ namespace FileParty.Core.RegistrationTests
             Assert.NotEqual(defaultConfig.DirectorySeparationCharacter, newConfig.DirectorySeparationCharacter);
             Assert.Equal(newConfig.DirectorySeparationCharacter, storage.DirectorySeparatorCharacter);
         }
+
+        [Fact]
+        public async Task AllowNullConfigOnRegistration()
+        {
+            var sc = this.AddFileParty(cfg =>
+            {
+                cfg.AddModule<TestModule>(null);
+                cfg.AddModule<TestModule2>(null);
+            });
+            
+            await using var sp = sc.BuildServiceProvider();
+            var factory = sp.GetRequiredService<IFilePartyFactory>();
+
+            var tmSP = factory.GetStorageProvider<TestModule>(new TestConfiguration());
+
+            Assert.NotNull(tmSP);
+        }
     }
 }
