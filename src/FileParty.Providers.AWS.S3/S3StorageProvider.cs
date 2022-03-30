@@ -58,16 +58,14 @@ namespace FileParty.Providers.AWS.S3
             }
             catch (ObjectDisposedException e)
             {
-                if (e.ObjectName == "Amazon.S3.AmazonS3Client")
+                if (e.ObjectName != "Amazon.S3.AmazonS3Client") throw;
+                
+                using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
                 {
-                    using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
-                    {
-                        return await s3Wrapper.ExecuteAsync((client) =>
-                            GetFileInformation(client, storagePointer, cancellationToken));
-                    }
+                    return await s3Wrapper.ExecuteAsync((client) =>
+                        GetFileInformation(client, storagePointer, cancellationToken));
                 }
 
-                throw;
             }
         }
 
@@ -96,16 +94,13 @@ namespace FileParty.Providers.AWS.S3
             }
             catch (ObjectDisposedException e)
             {
-                if (e.ObjectName == "Amazon.S3.AmazonS3Client")
+                if (e.ObjectName != "Amazon.S3.AmazonS3Client") throw;
+                
+                using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
                 {
-                    using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
-                    {
-                        return await s3Wrapper.ExecuteAsync((client) =>
-                            GetDirectoryInformation(client, storagePointer, cancellationToken));
-                    }
+                    return await s3Wrapper.ExecuteAsync((client) =>
+                        GetDirectoryInformation(client, storagePointer, cancellationToken));
                 }
-
-                throw;
             }
         
         }
@@ -146,11 +141,6 @@ namespace FileParty.Providers.AWS.S3
             catch (AmazonS3Exception s3Exception) when (s3Exception.StatusCode == HttpStatusCode.NotFound)
             {
                 throw Errors.FileNotFoundException;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-                throw Errors.UnknownException;
             }
         }
 
