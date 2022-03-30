@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using FileParty.Core.Enums;
 using FileParty.Core.Factory;
 using FileParty.Core.Interfaces;
 using FileParty.Core.Models;
@@ -12,7 +13,7 @@ namespace FileParty.Core.Registration
 {
     public static class FileParty
     {
-        private static ConcurrentDictionary<Type, ConcurrentBag<ServiceDescriptor>> ModuleDependencies =
+        private static readonly ConcurrentDictionary<Type, ConcurrentBag<ServiceDescriptor>> ModuleDependencies =
             new ConcurrentDictionary<Type, ConcurrentBag<ServiceDescriptor>>();
         
         internal static IEnumerable<ServiceDescriptor> GetModuleDependencies<TModule>() where TModule : class, IFilePartyModule, new()
@@ -29,41 +30,62 @@ namespace FileParty.Core.Registration
             }
         }
         
-        public static void RegisterModuleDependency<TModule, TService>(this TModule module)
-            where TModule : class, IFilePartyModule, new()
-            where TService : class
+        public static void RegisterModuleDependency<TModule, TService>(
+            this TModule module, 
+            ModuleDependencyServiceLifetime lifetime = ModuleDependencyServiceLifetime.Scoped) 
+        where TModule : class, IFilePartyModule, new()
+        where TService : class
         {
             EnsureKeyExists<TModule>();
-            ModuleDependencies[typeof(TModule)].Add(new ServiceDescriptor(typeof(TService), ServiceLifetime.Scoped));
+            ModuleDependencies[typeof(TModule)].Add(
+                new ServiceDescriptor(
+                    typeof(TService), 
+                    typeof(TService), 
+                    (ServiceLifetime) (int) lifetime));
         }
 
-        public static void RegisterModuleDependency<TModule, TService, TImplementation>(this TModule module)
-            where TModule : class, IFilePartyModule, new()
-            where TService : class
-            where TImplementation : class, TService
+        public static void RegisterModuleDependency<TModule, TService, TImplementation>(
+            this TModule module, 
+            ModuleDependencyServiceLifetime lifetime = ModuleDependencyServiceLifetime.Scoped)
+        where TModule : class, IFilePartyModule, new()
+        where TService : class
+        where TImplementation : class, TService
         {
             EnsureKeyExists<TModule>();
-            ModuleDependencies[typeof(TModule)]
-                .Add(new ServiceDescriptor(typeof(TService), typeof(TImplementation), ServiceLifetime.Scoped));
+            ModuleDependencies[typeof(TModule)].Add(
+                new ServiceDescriptor(
+                    typeof(TService), 
+                    typeof(TImplementation), 
+                    (ServiceLifetime) (int) lifetime));
         }
 
-        public static void RegisterModuleDependency<TModule, TService>(this TModule module, Func<TModule, TService> implementationFactory)
-            where TModule : class, IFilePartyModule, new()
-            where TService : class
+        public static void RegisterModuleDependency<TModule, TService>(
+            this TModule module, 
+            Func<TModule, IServiceProvider, TService> implementationFactory, 
+            ModuleDependencyServiceLifetime lifetime = ModuleDependencyServiceLifetime.Scoped)
+        where TModule : class, IFilePartyModule, new()
+        where TService : class
         {
             EnsureKeyExists<TModule>();
-            ModuleDependencies[typeof(TModule)]
-                .Add(new ServiceDescriptor(typeof(TService), x=> (TService) implementationFactory.DynamicInvoke(module), ServiceLifetime.Scoped));
+            ModuleDependencies[typeof(TModule)].Add(
+                    new ServiceDescriptor(typeof(TService), 
+                        serviceProvider => (TService) implementationFactory.Invoke(module, serviceProvider), 
+                        (ServiceLifetime) (int) lifetime));
         }
 
-        public static void RegisterModuleDependency<TModule, TService, TImplementation>(this TModule module, Func<TModule, TImplementation> implementationFactory)
-            where TModule : class, IFilePartyModule, new()
-            where TService : class
-            where TImplementation : class, TService
+        public static void RegisterModuleDependency<TModule, TService, TImplementation>(
+            this TModule module, 
+            Func<TModule, IServiceProvider, TImplementation> implementationFactory,
+            ModuleDependencyServiceLifetime lifetime = ModuleDependencyServiceLifetime.Scoped)
+        where TModule : class, IFilePartyModule, new()
+        where TService : class
+        where TImplementation : class, TService
         {
             EnsureKeyExists<TModule>();
-            ModuleDependencies[typeof(TModule)]
-                .Add(new ServiceDescriptor(typeof(TService), x=> (TImplementation) implementationFactory.DynamicInvoke(), ServiceLifetime.Scoped));
+            ModuleDependencies[typeof(TModule)].Add(
+                new ServiceDescriptor(typeof(TService), 
+                    serviceProvider=> (TImplementation) implementationFactory.Invoke(module, serviceProvider), 
+                    (ServiceLifetime) (int) lifetime));
         }
         
         /// <summary>
@@ -147,7 +169,7 @@ namespace FileParty.Core.Registration
             var fpServiceCollection = GetServiceCollection();
             var moduleConfig = new FilePartyModuleConfiguration<TModule>(defaultStorageProviderConfiguration);
             fpServiceCollection.AddSingleton<IFilePartyModuleConfiguration>(moduleConfig);
-            fpServiceCollection.AddSingleton(x => moduleConfig);
+            // fpServiceCollection.AddSingleton(x => moduleConfig);
             
             // register module with module config
             var module = new TModule();

@@ -4,10 +4,6 @@ namespace FileParty.Core.Exceptions
 {
     public class StorageException : Exception
     {
-        public StorageException()
-        {
-        }
-
         public StorageException(string message)
         {
             Message = message;

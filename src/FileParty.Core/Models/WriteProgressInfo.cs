@@ -33,5 +33,10 @@ namespace FileParty.Core.Models
         /// Percent complete
         /// </summary>
         public int PercentComplete { get; set; }
+        
+        /// <summary>
+        /// DateTime at which the request was created
+        /// </summary>
+        public DateTime RequestCreatedAt { get; set; }
     }
 }

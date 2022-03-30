@@ -37,7 +37,7 @@ namespace FileParty.Core.Registration
             var sc = new ServiceCollection {GetServiceCollection()};
             var config = configuration ?? _defaultConfiguration;
             sc.AddSingleton<StorageProviderConfiguration<TModule>>(x => config);
-            sc.AddSingleton<IStorageProviderConfiguration>(x => config);
+            // sc.AddSingleton<IStorageProviderConfiguration>(x => config);
             using (var sp = sc.BuildServiceProvider())
             {
                 var service = sp.GetRequiredService<IStorageProvider>();
@@ -50,7 +50,7 @@ namespace FileParty.Core.Registration
             var sc = new ServiceCollection {GetServiceCollection()};
             var config = configuration ?? _defaultConfiguration;
             sc.AddSingleton<StorageProviderConfiguration<TModule>>(x => config);
-            sc.AddSingleton<IStorageProviderConfiguration>(x => config);
+            // sc.AddSingleton<IStorageProviderConfiguration>(x => config);
             using (var sp = sc.BuildServiceProvider())
             {
                 var service = sp.GetRequiredService<IAsyncStorageProvider>();

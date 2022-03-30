@@ -50,7 +50,7 @@ namespace FileParty.Core
 
         public abstract IStoredItemInformation GetInformation(string storagePointer);
 
-        public virtual void Dispose()
+        protected virtual void Dispose()
         {
             Debug.WriteLine($"{GetType().Name} - {_instanceId}: Disposed at {DateTime.UtcNow:O}");
         }
