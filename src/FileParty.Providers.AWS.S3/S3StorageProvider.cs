@@ -133,8 +133,9 @@ namespace FileParty.Providers.AWS.S3
                 type = info.StoredType;
                 return type;
             }
-            catch
+            catch (Exception e)
             {
+                Console.WriteLine(e.ToString());
                 return type;
             }
         }
