@@ -60,8 +60,11 @@ namespace FileParty.Providers.AWS.S3
             {
                 if (e.ObjectName == "Amazon.S3.AmazonS3Client")
                 {
-                    return await _s3ClientFactory.ExecuteAsync((client) =>
-                        GetFileInformation(client, storagePointer, cancellationToken));
+                    using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+                    {
+                        return await s3Wrapper.ExecuteAsync((client) =>
+                            GetFileInformation(client, storagePointer, cancellationToken));
+                    }
                 }
 
                 throw;
@@ -95,8 +98,11 @@ namespace FileParty.Providers.AWS.S3
             {
                 if (e.ObjectName == "Amazon.S3.AmazonS3Client")
                 {
-                    return await _s3ClientFactory.ExecuteAsync((client) =>
-                        GetDirectoryInformation(client, storagePointer, cancellationToken));
+                    using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+                    {
+                        return await s3Wrapper.ExecuteAsync((client) =>
+                            GetDirectoryInformation(client, storagePointer, cancellationToken));
+                    }
                 }
 
                 throw;
@@ -239,44 +245,47 @@ namespace FileParty.Providers.AWS.S3
         
         public Task WriteAsync(FilePartyWriteRequest request, CancellationToken cancellationToken = default)
         {
-            return _s3ClientFactory.ExecuteAsync(async (s3Client) =>
+            using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
             {
-                using (var transferUtility = new TransferUtility(s3Client))
+                return s3Wrapper.ExecuteAsync(async (s3Client) =>
                 {
-                    if (await ExistsAsync(
-                            s3Client,
-                            request.StoragePointer,
-                            cancellationToken) &&
-                        request.WriteMode == WriteMode.Create)
+                    using (var transferUtility = new TransferUtility(s3Client))
                     {
-                        throw Errors.FileAlreadyExistsException;
-                    }
-
-                    var transferRequest = new TransferUtilityUploadRequest
-                    {
-                        BucketName = _bucketInfoProvider.GetBucketInfo().Name,
-                        InputStream = request.Stream,
-                        Key = request.StoragePointer
-                    };
-
-                    if (WriteProgressEvent != null)
-                    {
-                        transferRequest.UploadProgressEvent += (_, args) =>
+                        if (await ExistsAsync(
+                                s3Client,
+                                request.StoragePointer,
+                                cancellationToken) &&
+                            request.WriteMode == WriteMode.Create)
                         {
-                            WriteProgressEvent.Invoke(
-                                this, 
-                                new WriteProgressEventArgs(
-                                    request.Id, 
-                                    request.StoragePointer, 
-                                    args.TransferredBytes, 
-                                    args.TotalBytes, 
-                                    request.RequestCreatedAt));
+                            throw Errors.FileAlreadyExistsException;
+                        }
+
+                        var transferRequest = new TransferUtilityUploadRequest
+                        {
+                            BucketName = _bucketInfoProvider.GetBucketInfo().Name,
+                            InputStream = request.Stream,
+                            Key = request.StoragePointer
                         };
-                    }
+
+                        if (WriteProgressEvent != null)
+                        {
+                            transferRequest.UploadProgressEvent += (_, args) =>
+                            {
+                                WriteProgressEvent.Invoke(
+                                    this, 
+                                    new WriteProgressEventArgs(
+                                        request.Id, 
+                                        request.StoragePointer, 
+                                        args.TransferredBytes, 
+                                        args.TotalBytes, 
+                                        request.RequestCreatedAt));
+                            };
+                        }
                 
-                    await transferUtility.UploadAsync(transferRequest, cancellationToken);
-                }
-            });
+                        await transferUtility.UploadAsync(transferRequest, cancellationToken);
+                    }
+                });
+            }
         }
 
         public virtual Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
@@ -293,41 +302,54 @@ namespace FileParty.Providers.AWS.S3
                 BucketName = _bucketInfoProvider.GetBucketInfo().Name,
                 Key = storagePointer
             };
-            
-            return _s3ClientFactory.ExecuteAsync<Stream>(async (s3Client) =>
-            {
-                using (var response = await s3Client.GetObjectAsync(getRequest, cancellationToken))
-                {
-                    // check if exists / throw
-                    if (!await ExistsAsync(s3Client, storagePointer, cancellationToken))
-                    {
-                        throw Errors.FileNotFoundException;
-                    }
 
-                    var resultStream = new MemoryStream();
-                    await response.ResponseStream.CopyToAsync(resultStream, BufferSize, cancellationToken);
-                    resultStream.Position = 0;
-                    return resultStream;
-                }
-            });
+            using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+            {
+                return s3Wrapper.ExecuteAsync<Stream>(async (s3Client) =>
+                {
+                    using (var response = await s3Client.GetObjectAsync(getRequest, cancellationToken))
+                    {
+                        // check if exists / throw
+                        if (!await ExistsAsync(s3Client, storagePointer, cancellationToken))
+                        {
+                            throw Errors.FileNotFoundException;
+                        }
+
+                        var resultStream = new MemoryStream();
+                        await response.ResponseStream.CopyToAsync(resultStream, BufferSize, cancellationToken);
+                        resultStream.Position = 0;
+                        return resultStream;
+                    }
+                });
+            }
         }
 
         public virtual Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
-            return _s3ClientFactory.ExecuteAsync((s3Client) => DeleteAsync(s3Client, storagePointer, cancellationToken));
+            using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+            {
+                return s3Wrapper.ExecuteAsync((s3Client) => DeleteAsync(s3Client, storagePointer, cancellationToken));
+            }
         }
 
         public virtual Task DeleteAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default)
         {
-            return _s3ClientFactory.ExecuteAsync((s3Client) => DeleteAsync(s3Client, storagePointers, cancellationToken));
+            using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+            {
+                return s3Wrapper.ExecuteAsync((s3Client) => DeleteAsync(s3Client, storagePointers, cancellationToken));
+            }
         }
 
         public virtual async Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             try
             {
-                await _s3ClientFactory.ExecuteAsync((s3Client) => GetInformationAsync(s3Client, storagePointer, cancellationToken));
+                using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+                {
+                    await s3Wrapper.ExecuteAsync((s3Client) => GetInformationAsync(s3Client, storagePointer, cancellationToken));
+                }
+
                 return true;
             }
             catch (Exception)
@@ -339,20 +361,27 @@ namespace FileParty.Providers.AWS.S3
         public virtual Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default)
         {
-            return _s3ClientFactory.ExecuteAsync((s3Client) =>
+            using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
             {
-                IDictionary<string, bool> result = storagePointers
-                    .ToDictionary(
-                        k => k,
-                        v => ExistsAsync(s3Client, v, cancellationToken).GetAwaiter().GetResult());
+                return s3Wrapper.ExecuteAsync((s3Client) =>
+                {
+                    IDictionary<string, bool> result = storagePointers
+                        .ToDictionary(
+                            k => k,
+                            v => ExistsAsync(s3Client, v, cancellationToken).GetAwaiter().GetResult());
 
-                return Task.FromResult(result);
-            });
+                    return Task.FromResult(result);
+                });
+            }
         }
 
         public Task<StoredItemType?> TryGetStoredItemTypeAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
-            return _s3ClientFactory.ExecuteAsync((s3Client) => TryGetStoredItemTypeAsync(s3Client, storagePointer, cancellationToken));
+            using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+            {
+                return s3Wrapper.ExecuteAsync((s3Client) =>
+                    TryGetStoredItemTypeAsync(s3Client, storagePointer, cancellationToken));
+            }
         }
 
         public virtual Stream Read(string storagePointer)
@@ -372,10 +401,14 @@ namespace FileParty.Providers.AWS.S3
 
         public virtual bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
         {
-            StoredItemType? tmpType = null;
-            var res = _s3ClientFactory.Execute((s3Client) => TryGetStoredItemType(s3Client, storagePointer, out tmpType));
-            type = tmpType;
-            return res;
+            using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+            {
+                StoredItemType? tmpType = null;
+                var res = s3Wrapper.Execute((s3Client) =>
+                    TryGetStoredItemType(s3Client, storagePointer, out tmpType));
+                type = tmpType;
+                return res;
+            }
         }
 
         public virtual IStoredItemInformation GetInformation(
@@ -388,11 +421,14 @@ namespace FileParty.Providers.AWS.S3
             string storagePointer,
             CancellationToken cancellationToken = default)
         {
-            return _s3ClientFactory.ExecuteAsync((s3Client) => 
-                GetInformationAsync(
-                    s3Client,
-                    storagePointer,
-                    cancellationToken));
+            using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
+            {
+                return s3Wrapper.ExecuteAsync((s3Client) =>
+                    GetInformationAsync(
+                        s3Client,
+                        storagePointer,
+                        cancellationToken));
+            }
         }
 
         public void Write(FilePartyWriteRequest request)

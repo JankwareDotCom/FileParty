@@ -6,74 +6,99 @@ using FileParty.Providers.AWS.S3.Interfaces;
 
 namespace FileParty.Providers.AWS.S3
 {
-    public static class FilePartyS3ClientWrapper
+    internal class FilePartyS3ClientWrapper : IDisposable, IAsyncDisposable
     {
-        public static void Execute(this IFilePartyS3ClientFactory filePartyS3ClientFactory, 
-            Action<AmazonS3Client> action, StorageProviderConfiguration<AWS_S3Module> config = null)
+        private AmazonS3Client _client;
+        private readonly object _clientLock = new object();
+        private readonly IFilePartyS3ClientFactory _clientFactory;
+        private readonly StorageProviderConfiguration<AWS_S3Module> _config;
+
+        public FilePartyS3ClientWrapper(IFilePartyS3ClientFactory clientFactory, StorageProviderConfiguration<AWS_S3Module> config = null)
         {
-            var client = config == null
-                ? filePartyS3ClientFactory.GetClient()
-                : filePartyS3ClientFactory.GetClient(config);
-            
-            try
+            _clientFactory = clientFactory;
+            _config = config;
+        }
+
+        private void CreateNewClient()
+        {
+            lock (_clientLock)
             {
-                action(client);
-            }
-            finally
-            {
-                client?.Dispose();
+                _client?.Dispose();
+                _client = _config == null 
+                    ? _clientFactory.GetClient() 
+                    : _clientFactory.GetClient(_config);    
             }
         }
         
-        public static Task ExecuteAsync(this IFilePartyS3ClientFactory filePartyS3ClientFactory,
-            Func<AmazonS3Client, Task> action, StorageProviderConfiguration<AWS_S3Module> config = null)
+        public void Execute(Action<AmazonS3Client> action)
         {
-            var client = config == null
-                ? filePartyS3ClientFactory.GetClient()
-                : filePartyS3ClientFactory.GetClient(config);
-            
             try
             {
-                return action(client);
+                action(_client);
             }
-            finally
+            catch (ObjectDisposedException e)
             {
-                client?.Dispose();
+                if (e.ObjectName != "Amazon.S3.AmazonS3Client") throw;
+                
+                CreateNewClient();
+                action(_client);
             }
         }
         
-        public static T Execute<T>(this IFilePartyS3ClientFactory filePartyS3ClientFactory,
-            Func<AmazonS3Client, T> action, StorageProviderConfiguration<AWS_S3Module> config = null)
+        public Task ExecuteAsync(Func<AmazonS3Client, Task> action)
         {
-            var client = config == null
-                ? filePartyS3ClientFactory.GetClient()
-                : filePartyS3ClientFactory.GetClient(config);
-            
             try
             {
-                return action(client);
+                return action(_client);
             }
-            finally
+            catch (ObjectDisposedException e)
             {
-                client?.Dispose();
+                if (e.ObjectName != "Amazon.S3.AmazonS3Client") throw;
+                
+                CreateNewClient();
+                return action(_client);
             }
         }
         
-        public static Task<T> ExecuteAsync<T>(this IFilePartyS3ClientFactory filePartyS3ClientFactory,
-            Func<AmazonS3Client, Task<T>> action, StorageProviderConfiguration<AWS_S3Module> config = null)
+        public T Execute<T>(Func<AmazonS3Client, T> action)
         {
-            var client = config == null
-                ? filePartyS3ClientFactory.GetClient()
-                : filePartyS3ClientFactory.GetClient(config);
-            
             try
             {
-                return action(client);
+                return action(_client);
             }
-            finally
+            catch (ObjectDisposedException e)
             {
-                client?.Dispose();
+                if (e.ObjectName != "Amazon.S3.AmazonS3Client") throw;
+                
+                CreateNewClient();
+                return action(_client);
             }
+        }
+        
+        public Task<T> ExecuteAsync<T>(Func<AmazonS3Client, Task<T>> action)
+        {
+            try
+            {
+                return action(_client);
+            }
+            catch (ObjectDisposedException e)
+            {
+                if (e.ObjectName != "Amazon.S3.AmazonS3Client") throw;
+                
+                CreateNewClient();
+                return action(_client);
+            }
+        }
+
+        public void Dispose()
+        {
+            _client?.Dispose();
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return new ValueTask();
         }
     }
 }
