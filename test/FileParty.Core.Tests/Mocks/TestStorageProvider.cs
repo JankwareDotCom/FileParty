@@ -11,11 +11,17 @@ using FileParty.Core.EventArgs;
 using FileParty.Core.Interfaces;
 using FileParty.Core.Models;
 
-namespace FileParty.Core.RegistrationTests
+namespace FileParty.Core.Tests
 {
     public class TestStorageProvider : BaseStorageProvider<TestModule>
     {
-        public TestStorageProvider(StorageProviderConfiguration<TestModule> configuration) : base(configuration)
+        public TestStorageProvider(
+            StorageProviderConfiguration<TestModule> configuration, 
+            IFakeService1 fs1, 
+            IFakeService2 fs2, 
+            FakeService3 fs3,
+            FakeService4 fs4) 
+            : base(configuration)
         {
             
         }
@@ -125,7 +131,7 @@ namespace FileParty.Core.RegistrationTests
 
     public class TestStorageProvider2 : BaseStorageProvider<TestModule2>
     {
-        public override void Dispose()
+        protected override void Dispose()
         {
             Debug.WriteLine("MEMORY: " + GC.GetTotalMemory(false));
             base.Dispose();

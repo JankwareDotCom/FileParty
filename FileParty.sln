@@ -21,7 +21,7 @@ ProjectSection(SolutionItems) = preProject
 	README.md = README.md
 EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileParty.Core.RegistrationTests", "test\FileParty.Core.RegistrationTests\FileParty.Core.RegistrationTests.csproj", "{C17D1DB1-7C20-413E-BC69-A0656720FA33}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileParty.Core.Tests", "test\FileParty.Core.Tests\FileParty.Core.Tests.csproj", "{C17D1DB1-7C20-413E-BC69-A0656720FA33}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

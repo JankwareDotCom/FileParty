@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FileParty.Core.RegistrationTests
+namespace FileParty.Core.Tests
 {
     public class FakeService1 : IFakeService1
     {
@@ -51,5 +51,10 @@ namespace FileParty.Core.RegistrationTests
         {
             return new[] {_fakeService1.InstanceId, _fakeService2.InstanceId, InstanceId};
         }
+    }
+
+    public class FakeService4
+    {
+        
     }
 }

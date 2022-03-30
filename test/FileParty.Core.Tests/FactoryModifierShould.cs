@@ -4,7 +4,7 @@ using FileParty.Core.Registration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace FileParty.Core.RegistrationTests
+namespace FileParty.Core.Tests
 {
     public class FactoryModifierShould
     {
