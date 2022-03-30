@@ -292,6 +292,8 @@ namespace FileParty.Providers.FileSystem.Tests
             Assert.True(info1.LastModifiedTimestamp < info2.LastModifiedTimestamp);
             Assert.Equal(StoredItemType.File, info1.StoredType);
             Assert.Equal(info1.StoredType, info2.StoredType);
+            Assert.Equal(info1.StoragePointer, info2.StoragePointer);
+            Assert.Equal(info1.Size, info2.Size);
         }
     }
 }

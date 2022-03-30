@@ -1,6 +1,6 @@
 ﻿using FileParty.Core.Models;
 
-namespace FileParty.Core.RegistrationTests
+namespace FileParty.Core.Tests
 {
     public class TestConfiguration : StorageProviderConfiguration<TestModule>
     {

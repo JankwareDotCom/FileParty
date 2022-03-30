@@ -10,6 +10,7 @@ namespace FileParty.Core.Models
     public abstract class StorageProviderConfiguration<TFilePartyModule> : IStorageProviderConfiguration
         where TFilePartyModule : class, IFilePartyModule, new()
     {
-        public virtual char DirectorySeparationCharacter { get; } = Path.DirectorySeparatorChar;
+        /// <inheritdoc />
+        public virtual char DirectorySeparationCharacter => Path.DirectorySeparatorChar;
     }
 }

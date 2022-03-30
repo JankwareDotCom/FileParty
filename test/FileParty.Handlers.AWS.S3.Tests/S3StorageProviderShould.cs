@@ -133,7 +133,9 @@ namespace FileParty.Handlers.AWS.S3.Tests
                 Assert.True(await _asyncStorageProvider.ExistsAsync(storagePointer));
             }
 
-            Assert.Equal(StoredItemType.Directory,await _asyncStorageProvider.TryGetStoredItemTypeAsync("dir2"));
+            var info = await _asyncStorageProvider.GetInformationAsync("dir2");
+            Assert.Equal(StoredItemType.Directory, info.StoredType);
+            Assert.Equal(StoredItemType.Directory, await _asyncStorageProvider.TryGetStoredItemTypeAsync("dir2"));
             
             await _asyncStorageProvider.DeleteAsync("dir2");
 

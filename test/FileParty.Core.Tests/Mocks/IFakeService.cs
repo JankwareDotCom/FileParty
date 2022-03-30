@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FileParty.Core.RegistrationTests
+namespace FileParty.Core.Tests
 {
     public interface IFakeService1
     {
