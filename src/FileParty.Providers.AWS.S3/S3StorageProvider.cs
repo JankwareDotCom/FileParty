@@ -241,39 +241,39 @@ namespace FileParty.Providers.AWS.S3
         {
             return _s3ClientFactory.ExecuteAsync(async (s3Client) =>
             {
-                if (await ExistsAsync(
-                        s3Client,
-                        request.StoragePointer,
-                        cancellationToken) &&
-                    request.WriteMode == WriteMode.Create)
-                {
-                    throw Errors.FileAlreadyExistsException;
-                }
-
-                var transferRequest = new TransferUtilityUploadRequest
-                {
-                    BucketName = _bucketInfoProvider.GetBucketInfo().Name,
-                    InputStream = request.Stream,
-                    Key = request.StoragePointer
-                };
-
-                if (WriteProgressEvent != null)
-                {
-                    transferRequest.UploadProgressEvent += (_, args) =>
-                    {
-                        WriteProgressEvent.Invoke(
-                            this, 
-                            new WriteProgressEventArgs(
-                                request.Id, 
-                                request.StoragePointer, 
-                                args.TransferredBytes, 
-                                args.TotalBytes, 
-                                request.RequestCreatedAt));
-                    };
-                }
-                
                 using (var transferUtility = new TransferUtility(s3Client))
                 {
+                    if (await ExistsAsync(
+                            s3Client,
+                            request.StoragePointer,
+                            cancellationToken) &&
+                        request.WriteMode == WriteMode.Create)
+                    {
+                        throw Errors.FileAlreadyExistsException;
+                    }
+
+                    var transferRequest = new TransferUtilityUploadRequest
+                    {
+                        BucketName = _bucketInfoProvider.GetBucketInfo().Name,
+                        InputStream = request.Stream,
+                        Key = request.StoragePointer
+                    };
+
+                    if (WriteProgressEvent != null)
+                    {
+                        transferRequest.UploadProgressEvent += (_, args) =>
+                        {
+                            WriteProgressEvent.Invoke(
+                                this, 
+                                new WriteProgressEventArgs(
+                                    request.Id, 
+                                    request.StoragePointer, 
+                                    args.TransferredBytes, 
+                                    args.TotalBytes, 
+                                    request.RequestCreatedAt));
+                        };
+                    }
+                
                     await transferUtility.UploadAsync(transferRequest, cancellationToken);
                 }
             });
@@ -288,22 +288,22 @@ namespace FileParty.Providers.AWS.S3
 
         public virtual Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
+            var getRequest = new GetObjectRequest
+            {
+                BucketName = _bucketInfoProvider.GetBucketInfo().Name,
+                Key = storagePointer
+            };
+            
             return _s3ClientFactory.ExecuteAsync<Stream>(async (s3Client) =>
             {
-                // check if exists / throw
-                if (!await ExistsAsync(s3Client, storagePointer, cancellationToken))
-                {
-                    throw Errors.FileNotFoundException;
-                }
-
-                var getRequest = new GetObjectRequest
-                {
-                    BucketName = _bucketInfoProvider.GetBucketInfo().Name,
-                    Key = storagePointer
-                };
-
                 using (var response = await s3Client.GetObjectAsync(getRequest, cancellationToken))
                 {
+                    // check if exists / throw
+                    if (!await ExistsAsync(s3Client, storagePointer, cancellationToken))
+                    {
+                        throw Errors.FileNotFoundException;
+                    }
+
                     var resultStream = new MemoryStream();
                     await response.ResponseStream.CopyToAsync(resultStream, BufferSize, cancellationToken);
                     resultStream.Position = 0;
