@@ -17,6 +17,7 @@ namespace FileParty.Providers.AWS.S3
         {
             _clientFactory = clientFactory;
             _config = config;
+            CreateNewClient();
         }
 
         private void CreateNewClient()
