@@ -40,36 +40,83 @@ namespace FileParty.Providers.AWS.S3
 
         #region privateMethods
 
+        protected virtual async Task<StoredItemInformation> GetFileInformation(AmazonS3Client s3Client, string storagePointer, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                var result = new StoredItemInformation();
+                var omInfo = await s3Client
+                    .GetObjectMetadataAsync(_bucketInfoProvider.GetBucketInfo().Name, storagePointer, cancellationToken)
+                    .ConfigureAwait(false);
+
+                result.StoredType = StoredItemType.File;
+                result.Size = omInfo.ContentLength;
+                result.LastModifiedTimestamp = omInfo.LastModified.ToUniversalTime();
+                result.StoragePointer = storagePointer;
+                return result;
+            }
+            catch (ObjectDisposedException e)
+            {
+                if (e.ObjectName == "Amazon.S3.AmazonS3Client")
+                {
+                    return await _s3ClientFactory.ExecuteAsync((client) =>
+                        GetFileInformation(client, storagePointer, cancellationToken));
+                }
+
+                throw;
+            }
+        }
+
+        protected virtual async Task<StoredItemInformation> GetDirectoryInformation(AmazonS3Client s3Client,
+            string storagePointer, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                var result = new StoredItemInformation();
+                storagePointer = storagePointer.EndsWith(DirectorySeparatorCharacter.ToString())
+                    ? storagePointer
+                    : storagePointer + DirectorySeparatorCharacter;
+
+                var loInfo = await s3Client
+                    .ListObjectsAsync(_bucketInfoProvider.GetBucketInfo().Name, storagePointer, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (!loInfo.S3Objects.Any()) 
+                    throw Errors.FileNotFoundException;
+
+                result.StoredType = StoredItemType.Directory;
+                result.Size = null;
+
+                return result;
+            }
+            catch (ObjectDisposedException e)
+            {
+                if (e.ObjectName == "Amazon.S3.AmazonS3Client")
+                {
+                    return await _s3ClientFactory.ExecuteAsync((client) =>
+                        GetDirectoryInformation(client, storagePointer, cancellationToken));
+                }
+
+                throw;
+            }
+        
+        }
+        
         protected virtual async Task<IStoredItemInformation> GetInformationAsync(AmazonS3Client s3Client, string storagePointer, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = new StoredItemInformation();
+                StoredItemInformation result;
+                
                 try
                 {
-                    var omInfo = await s3Client
-                        .GetObjectMetadataAsync(_bucketInfoProvider.GetBucketInfo().Name, storagePointer, cancellationToken)
-                        .ConfigureAwait(false);
-
-                    result.StoredType = StoredItemType.File;
-                    result.Size = omInfo.ContentLength;
-                    result.LastModifiedTimestamp = omInfo.LastModified.ToUniversalTime();
-                    result.StoragePointer = storagePointer;
+                    result = await GetFileInformation(s3Client, storagePointer, cancellationToken);
                 }
                 catch (AmazonS3Exception s3Exception) when (s3Exception.StatusCode == HttpStatusCode.NotFound)
                 {
-                    storagePointer = storagePointer.EndsWith(DirectorySeparatorCharacter.ToString())
-                        ? storagePointer
-                        : storagePointer + DirectorySeparatorCharacter;
-
-                    var loInfo = await s3Client
-                        .ListObjectsAsync(_bucketInfoProvider.GetBucketInfo().Name, storagePointer, cancellationToken)
-                        .ConfigureAwait(false);
-
-                    if (!loInfo.S3Objects.Any()) throw;
-
-                    result.StoredType = StoredItemType.Directory;
-                    result.Size = null;
+                    result = await GetDirectoryInformation(s3Client, storagePointer, cancellationToken);
                 }
 
                 var pathParts =
