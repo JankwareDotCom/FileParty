@@ -94,8 +94,9 @@ namespace FileParty.Providers.AWS.S3
             {
                 throw Errors.FileNotFoundException;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Console.WriteLine(e.ToString());
                 throw Errors.UnknownException;
             }
         }
@@ -135,7 +136,6 @@ namespace FileParty.Providers.AWS.S3
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
                 return type;
             }
         }
