@@ -8,11 +8,11 @@ namespace FileParty.Providers.AWS.S3
     {
         public AWS_S3Module()
         {
-            this.RegisterModuleDependency<AWS_S3Module, 
+            this.RegisterModuleDependency<AWS_S3Module,
                 IFilePartyS3ClientFactory, FilePartyS3ClientFactory>();
-            this.RegisterModuleDependency<AWS_S3Module, 
+            this.RegisterModuleDependency<AWS_S3Module,
                 IFilePartyAWSCredentialFactory, FilePartyAWSCredentialFactory>();
-            this.RegisterModuleDependency<AWS_S3Module, 
+            this.RegisterModuleDependency<AWS_S3Module,
                 IFilePartyS3BucketInformationProvider, FilePartyS3BucketInformationProvider>();
         }
     }

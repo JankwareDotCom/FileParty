@@ -15,13 +15,12 @@ namespace FileParty.Core
         where TModule : class, IFilePartyModule, new()
     {
         private readonly Guid _instanceId = Guid.NewGuid();
-        public virtual char DirectorySeparatorCharacter => Configuration.DirectorySeparationCharacter;
 
         // ReSharper disable once MemberCanBePrivate.Global
         protected readonly StorageProviderConfiguration<TModule> Configuration;
-        
+
         /// <summary>
-        /// Constructor for Storage Provider.
+        ///     Constructor for Storage Provider.
         /// </summary>
         /// <param name="configuration">Configuration for storage providers (writers and readers) in a module</param>
         protected BaseAsyncStorageProvider(StorageProviderConfiguration<TModule> configuration)
@@ -29,6 +28,8 @@ namespace FileParty.Core
             Debug.WriteLine($"{GetType().Name} - {_instanceId}: Created at {DateTime.UtcNow:O}");
             Configuration = configuration;
         }
+
+        public virtual char DirectorySeparatorCharacter => Configuration.DirectorySeparationCharacter;
 
         public abstract Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default);
 
@@ -51,18 +52,18 @@ namespace FileParty.Core
             var request = FilePartyWriteRequest.Create(storagePointer, stream, out _, WriteMode.Create);
             await WriteAsync(request, cancellationToken);
         }
-        
+
         public abstract Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default);
 
         public abstract Task DeleteAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default);
+
+        public abstract event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
 
         public virtual ValueTask DisposeAsync()
         {
             Debug.WriteLine($"{GetType().Name} - {_instanceId}: Disposed at {DateTime.UtcNow:O}");
             return new ValueTask();
         }
-
-        public abstract event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
     }
 }

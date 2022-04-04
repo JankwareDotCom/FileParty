@@ -1,21 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFrameworks>net5.0;net6.0;netstandard2.0;netstandard2.1</TargetFrameworks>
-        <Version>1.2.0</Version>
-        <Description>Agnostic File Storage, AWS S3 Module</Description>
-        <PackageProjectUrl>https://github.com/JankwareDotCom/FileParty</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/JankwareDotCom/FileParty</RepositoryUrl>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworks>net5.0;net6.0;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <Version>1.2.0</Version>
+    <Description>Agnostic File Storage, AWS S3 Module</Description>
+    <PackageProjectUrl>https://github.com/JankwareDotCom/FileParty</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/JankwareDotCom/FileParty</RepositoryUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\FileParty.Core\FileParty.Core.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FileParty.Core\FileParty.Core.csproj"/>
+  </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="AWSSDK.S3" Version="[3.3,4)" IncludeAssets="all" PrivateAssets="compile" />
-      <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="[3.3,4)" IncludeAssets="all" PrivateAssets="compile"/>
+    <PackageReference Include="AWSSDK.SecurityToken" Version="[3.3,4)"/>
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*"/>
+  </ItemGroup>
 
 </Project>

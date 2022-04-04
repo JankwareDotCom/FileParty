@@ -13,7 +13,7 @@ namespace FileParty.Core.Exceptions
         {
             ErrorCode = errorCode;
         }
-        
+
         // ReSharper disable once UnusedAutoPropertyAccessor.Global
         // ReSharper disable once MemberCanBePrivate.Global
         public string ErrorCode { get; } = string.Empty;

@@ -9,7 +9,7 @@ namespace FileParty.Core.Interfaces
     public interface IAsyncStorageReader : IUseDirectorySeparatorCharacter
     {
         /// <summary>
-        /// Get a stream of a file from the storage provider; This will need disposed.
+        ///     Get a stream of a file from the storage provider; This will need disposed.
         /// </summary>
         /// <param name="storagePointer">Generally the path where the file is stored</param>
         /// <param name="cancellationToken">Cancellation Token</param>
@@ -19,7 +19,7 @@ namespace FileParty.Core.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Determines if the file exists in the storage provider
+        ///     Determines if the file exists in the storage provider
         /// </summary>
         /// <param name="storagePointer">Generally the path where the file is stored</param>
         /// <param name="cancellationToken">Cancellation Token</param>
@@ -29,7 +29,7 @@ namespace FileParty.Core.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Determines if files exists in the storage pointer
+        ///     Determines if files exists in the storage pointer
         /// </summary>
         /// <param name="storagePointers">Generally the path where the file is stored, as an enumerable</param>
         /// <param name="cancellationToken">Cancellation Token</param>
@@ -39,7 +39,7 @@ namespace FileParty.Core.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Tries to get a stored item type (Directory / File)
+        ///     Tries to get a stored item type (Directory / File)
         /// </summary>
         /// <param name="storagePointer">Generally the path where the file is stored</param>
         /// <param name="cancellationToken">Cancellation Token</param>
@@ -49,11 +49,13 @@ namespace FileParty.Core.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Returns basic information about a stored file or directory
+        ///     Returns basic information about a stored file or directory
         /// </summary>
         /// <param name="storagePointer">Generally the path where the file is stored</param>
         /// <param name="cancellationToken">Cancellation Token</param>
-        /// <returns><see cref="IStoredItemInformation"/></returns>
+        /// <returns>
+        ///     <see cref="IStoredItemInformation" />
+        /// </returns>
         Task<IStoredItemInformation> GetInformationAsync(
             string storagePointer,
             CancellationToken cancellationToken = default);

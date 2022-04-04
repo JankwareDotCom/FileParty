@@ -13,12 +13,12 @@ namespace FileParty.Providers.AWS.S3
         {
             _config = config;
         }
-        
+
         public virtual IAWSBucketInformation GetBucketInfo()
         {
             return GetBucketInfo(_config);
         }
-        
+
         public virtual IAWSBucketInformation GetBucketInfo(StorageProviderConfiguration<AWS_S3Module> config)
         {
             if (config is IAWSBucketInformation bucketInfo)

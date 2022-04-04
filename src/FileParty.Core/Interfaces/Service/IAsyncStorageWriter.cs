@@ -12,16 +12,16 @@ namespace FileParty.Core.Interfaces
     public interface IAsyncStorageWriter : IUseDirectorySeparatorCharacter
     {
         /// <summary>
-        /// Write a stream to a storage provider
+        ///     Write a stream to a storage provider
         /// </summary>
         /// <param name="request">Write Request Model</param>
         /// <param name="cancellationToken">Cancellation Token</param>
         Task WriteAsync(
-            FilePartyWriteRequest request, 
+            FilePartyWriteRequest request,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
-        /// Write a stream to a storage provider
+        ///     Write a stream to a storage provider
         /// </summary>
         /// <param name="storagePointer">Generally the path to store the file</param>
         /// <param name="stream">Stream to store, assumes you manage disposal</param>
@@ -33,9 +33,9 @@ namespace FileParty.Core.Interfaces
             Stream stream,
             WriteMode writeMode,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
-        /// Delete a file from the storage provider
+        ///     Delete a file from the storage provider
         /// </summary>
         /// <param name="storagePointer">Generally the path where the file is stored</param>
         /// <param name="cancellationToken">Cancellation Token</param>
@@ -45,7 +45,7 @@ namespace FileParty.Core.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Delete many files from the storage provider
+        ///     Delete many files from the storage provider
         /// </summary>
         /// <param name="storagePointers">Generally the path where the file is stored, as an enumerable</param>
         /// <param name="cancellationToken">Cancellation Token</param>
@@ -53,9 +53,9 @@ namespace FileParty.Core.Interfaces
         Task DeleteAsync(
             IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
-        /// EventHandler for Write Progress, uses <see cref="WriteProgressEventArgs"/>
+        ///     EventHandler for Write Progress, uses <see cref="WriteProgressEventArgs" />
         /// </summary>
         event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
     }

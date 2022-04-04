@@ -5,37 +5,37 @@ namespace FileParty.Core.Models
     public class WriteProgressInfo
     {
         /// <summary>
-        /// Identifier for write progress request
+        ///     Identifier for write progress request
         /// </summary>
-        public Guid WriteProgressId { get; set; } 
-        
+        public Guid WriteProgressId { get; set; }
+
         /// <summary>
-        /// Generally the path where the file is stored
+        ///     Generally the path where the file is stored
         /// </summary>
         public string StoragePointer { get; set; }
 
         /// <summary>
-        /// Total bytes transferred
+        ///     Total bytes transferred
         /// </summary>
         public long TotalBytesTransferred { get; set; }
 
         /// <summary>
-        /// Remaining bytes to be transferred
+        ///     Remaining bytes to be transferred
         /// </summary>
         public long TotalBytesRemaining { get; set; }
 
         /// <summary>
-        /// File size in bytes
+        ///     File size in bytes
         /// </summary>
         public long TotalFileBytes { get; set; }
 
         /// <summary>
-        /// Percent complete
+        ///     Percent complete
         /// </summary>
         public int PercentComplete { get; set; }
-        
+
         /// <summary>
-        /// DateTime at which the request was created
+        ///     DateTime at which the request was created
         /// </summary>
         public DateTime RequestCreatedAt { get; set; }
     }
