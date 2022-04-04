@@ -98,7 +98,8 @@ namespace FileParty.Providers.FileSystem
 
             if (type is StoredItemType.File)
                 File.Delete(storagePointer);
-            else if (type is StoredItemType.Directory) Directory.Delete(storagePointer, true);
+            else if (type is StoredItemType.Directory) 
+                Directory.Delete(storagePointer, true);
 
             return Task.CompletedTask;
         }
@@ -116,7 +117,8 @@ namespace FileParty.Providers.FileSystem
                 
                 if (type is StoredItemType.File)
                     File.Delete(storagePointer);
-                else if (type is StoredItemType.Directory) Directory.Delete(storagePointer, true);
+                else if (type is StoredItemType.Directory) 
+                    Directory.Delete(storagePointer, true);
             }
 
             return Task.CompletedTask;
@@ -126,8 +128,7 @@ namespace FileParty.Providers.FileSystem
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
             
-            return Task.FromResult(
-                TryGetStoredItemType(storagePointer, out var _));
+            return Task.FromResult(TryGetStoredItemType(storagePointer, out _));
         }
 
         public virtual Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
@@ -157,7 +158,8 @@ namespace FileParty.Providers.FileSystem
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
             
-            if (!TryGetStoredItemType(storagePointer, out var type) || type == null) return null;
+            if (!TryGetStoredItemType(storagePointer, out var type) || type == null) 
+                return Task.FromResult<IStoredItemInformation>(null);
 
             var fileInfo = new FileInfo(storagePointer);
             var directoryPath = Path.GetDirectoryName(storagePointer);
@@ -181,21 +183,15 @@ namespace FileParty.Providers.FileSystem
         public virtual bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
-            
+
             type = null;
 
-            try
-            {
-                if (File.Exists(storagePointer))
-                    type = StoredItemType.File;
-                else if (Directory.Exists(storagePointer)) type = StoredItemType.Directory;
+            if (File.Exists(storagePointer))
+                type = StoredItemType.File;
+            else if (Directory.Exists(storagePointer))
+                type = StoredItemType.Directory;
 
-                return type != null;
-            }
-            catch
-            {
-                return false;
-            }
+            return type != null;
         }
 
         public void Write(FilePartyWriteRequest request)

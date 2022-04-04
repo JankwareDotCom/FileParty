@@ -7,7 +7,7 @@ namespace FileParty.Providers.FileSystem
     {
         private char _directorySeparator = Path.DirectorySeparatorChar;
         public override char DirectorySeparationCharacter => _directorySeparator;
-        public string BasePath { get; set; }
+        public string BasePath { get; set; } = Path.GetTempPath();
 
         public FileSystemConfiguration()
         {

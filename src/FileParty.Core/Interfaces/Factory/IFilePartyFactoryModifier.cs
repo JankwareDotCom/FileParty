@@ -1,4 +1,5 @@
-﻿using FileParty.Core.Models;
+﻿using FileParty.Core.Enums;
+using FileParty.Core.Models;
 
 namespace FileParty.Core.Interfaces
 {
