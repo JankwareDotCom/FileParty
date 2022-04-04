@@ -6,15 +6,26 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FileParty.Core.Registration
 {
-    internal class FilePartyModuleConfiguration<TModule> : IFilePartyModuleConfiguration 
+    internal class FilePartyModuleConfiguration<TModule> : IFilePartyModuleConfiguration
         where TModule : class, IFilePartyModule, new()
     {
         private readonly IServiceCollection _serviceCollection = new ServiceCollection();
         private StorageProviderConfiguration<TModule> _defaultConfiguration;
         private TModule _module;
+
         public FilePartyModuleConfiguration(StorageProviderConfiguration<TModule> defaultConfiguration)
         {
             SetDefaultConfiguration(defaultConfiguration);
+        }
+
+        public IStorageProvider GetStorageProvider()
+        {
+            return GetStorageProvider(null);
+        }
+
+        public async Task<IAsyncStorageProvider> GetAsyncStorageProvider()
+        {
+            return await GetAsyncStorageProvider(null);
         }
 
         internal void SetDefaultConfiguration(StorageProviderConfiguration<TModule> defaultConfiguration)
@@ -22,7 +33,11 @@ namespace FileParty.Core.Registration
             _defaultConfiguration = defaultConfiguration;
         }
 
-        internal IServiceCollection GetServiceCollection() => _serviceCollection;
+        internal IServiceCollection GetServiceCollection()
+        {
+            return _serviceCollection;
+        }
+
         internal IServiceCollection AttachModule(TModule module)
         {
             _module = module;
@@ -44,8 +59,9 @@ namespace FileParty.Core.Registration
                 return service;
             }
         }
-        
-        internal Task<IAsyncStorageProvider> GetAsyncStorageProvider(StorageProviderConfiguration<TModule> configuration)
+
+        internal Task<IAsyncStorageProvider> GetAsyncStorageProvider(
+            StorageProviderConfiguration<TModule> configuration)
         {
             var sc = new ServiceCollection {GetServiceCollection()};
             var config = configuration ?? _defaultConfiguration;
@@ -54,18 +70,8 @@ namespace FileParty.Core.Registration
             using (var sp = sc.BuildServiceProvider())
             {
                 var service = sp.GetRequiredService<IAsyncStorageProvider>();
-                return Task.FromResult(service);    
+                return Task.FromResult(service);
             }
-        }
-
-        public IStorageProvider GetStorageProvider()
-        {
-            return GetStorageProvider(null);
-        }
-
-        public async Task<IAsyncStorageProvider> GetAsyncStorageProvider()
-        {
-            return await GetAsyncStorageProvider(null);
         }
     }
 }

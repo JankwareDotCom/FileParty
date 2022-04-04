@@ -14,7 +14,7 @@ namespace FileParty.Providers.AWS.S3.Config
         /// </summary>
         string Name { get; set; }
     }
-    
+
     internal static class IAWSBucketInformationExtension
     {
         public static RegionEndpoint GetRegionEndpoint(this IAWSBucketInformation bucketInformation)

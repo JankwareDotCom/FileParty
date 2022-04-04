@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.SecurityToken;
@@ -51,9 +50,9 @@ namespace FileParty.Providers.AWS.S3
             {
                 throw;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                throw Errors.InvalidConfiguration;    
+                throw Errors.InvalidConfiguration;
             }
 
             throw Errors.InvalidConfiguration;

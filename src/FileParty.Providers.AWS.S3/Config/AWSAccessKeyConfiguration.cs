@@ -1,6 +1,4 @@
-﻿using FileParty.Core.Models;
-
-namespace FileParty.Providers.AWS.S3.Config
+﻿namespace FileParty.Providers.AWS.S3.Config
 {
     public class AWSAccessKeyConfiguration : BaseAWSCredential, IAccessKeyConfiguration
     {

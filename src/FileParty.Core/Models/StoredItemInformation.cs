@@ -29,11 +29,11 @@ namespace FileParty.Core.Models
 
         /// <inheritdoc />
         public Dictionary<string, object> Properties { get; } =
-            new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
+            new(StringComparer.InvariantCultureIgnoreCase);
 
 
         /// <summary>
-        /// Trys to get a property value as type
+        ///     Trys to get a property value as type
         /// </summary>
         /// <param name="propertyName">Property Name in collection</param>
         /// <param name="value">Out as Value Variable</param>
@@ -43,7 +43,7 @@ namespace FileParty.Core.Models
         public bool TryGetProperty<T>(string propertyName, out T value, T defaultValue = default)
         {
             value = defaultValue;
-            
+
             if (string.IsNullOrWhiteSpace(propertyName))
             {
                 return false;
@@ -58,15 +58,15 @@ namespace FileParty.Core.Models
             if (propertyValue is T tValue)
             {
                 value = tValue;
-            } 
+            }
             else if (isNullable && propertyValue is null)
             {
                 value = default;
             }
-            
+
             return true;
         }
-        
+
         private static bool IsNullable<T>(object obj)
         {
             if (obj == null) return true;

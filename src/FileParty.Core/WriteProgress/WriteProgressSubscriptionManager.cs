@@ -8,12 +8,11 @@ namespace FileParty.Core.WriteProgress
 {
     public class WriteProgressSubscriptionManager : IWriteProgressSubscriptionManager
     {
-        private readonly ConcurrentDictionary<Guid, WriteProgressHandler> _allHandlers =
-            new ConcurrentDictionary<Guid, WriteProgressHandler>();
+        private readonly ConcurrentDictionary<Guid, WriteProgressHandler> _allHandlers = new();
 
         private readonly ConcurrentDictionary<Guid, ConcurrentDictionary<Guid, WriteProgressHandler>> _requestHandlers =
-            new ConcurrentDictionary<Guid, ConcurrentDictionary<Guid, WriteProgressHandler>>();
-        
+            new();
+
         public Guid SubscribeToAll(WriteProgressHandler handler)
         {
             var id = Guid.NewGuid();
@@ -43,7 +42,7 @@ namespace FileParty.Core.WriteProgress
             _requestHandlers[requestId].TryRemove(handlerId, out _);
 
             if (_requestHandlers[requestId].Any()) return;
-            
+
             _requestHandlers.TryRemove(requestId, out _);
         }
 
@@ -57,11 +56,11 @@ namespace FileParty.Core.WriteProgress
             return _requestHandlers
                 .ToDictionary(k => k.Key, v => v.Value.Keys.ToList());
         }
-        
+
         public List<WriteProgressHandler> GetRequestHandlers(Guid requestId)
         {
-            return !_requestHandlers.ContainsKey(requestId) 
-                ? new List<WriteProgressHandler>() 
+            return !_requestHandlers.ContainsKey(requestId)
+                ? new List<WriteProgressHandler>()
                 : _requestHandlers[requestId].Values.ToList();
         }
     }

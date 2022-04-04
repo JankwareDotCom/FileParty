@@ -11,7 +11,6 @@ namespace FileParty.Providers.AWS.S3.Config
     {
         private readonly StorageProviderConfiguration<AWS_S3Module> _baseConfig;
         private SessionAWSCredentials _sessionCredentials = null;
-        public int DurationSeconds { get; set; } = 60 * 15;
 
         private AWSSessionCredentials(StorageProviderConfiguration<AWS_S3Module> baseConfig)
         {
@@ -19,30 +18,31 @@ namespace FileParty.Providers.AWS.S3.Config
         }
 
         /// <summary>
-        /// AWS Default Configuration
+        ///     AWS Default Configuration
         /// </summary>
-        public AWSSessionCredentials() 
+        public AWSSessionCredentials()
             : this(new AWSDefaultConfiguration())
         {
-            
         }
 
         /// <summary>
-        /// AWS AccessKey Configuration
+        ///     AWS AccessKey Configuration
         /// </summary>
-        public AWSSessionCredentials(string accessKey, string secretKey) 
-            : this(new AWSAccessKeyConfiguration{ AccessKey = accessKey, SecretKey = secretKey})
+        public AWSSessionCredentials(string accessKey, string secretKey)
+            : this(new AWSAccessKeyConfiguration {AccessKey = accessKey, SecretKey = secretKey})
         {
-            
         }
-        
-        internal async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(IFilePartyAWSCredentialFactory credFactory)
+
+        public int DurationSeconds { get; set; } = 60 * 15;
+
+        internal async Task<SessionAWSCredentials> GetTemporaryCredentialsAsync(
+            IFilePartyAWSCredentialFactory credFactory)
         {
             if (_sessionCredentials != null)
             {
                 return _sessionCredentials;
             }
-            
+
             using (var stsClient = new AmazonSecurityTokenServiceClient(credFactory.GetAmazonCredentials(_baseConfig)))
             {
                 var getSessionTokenRequest = new GetSessionTokenRequest
@@ -57,7 +57,7 @@ namespace FileParty.Providers.AWS.S3.Config
                     new SessionAWSCredentials(credentials.AccessKeyId,
                         credentials.SecretAccessKey,
                         credentials.SessionToken);
-                
+
                 _sessionCredentials = sessionCredentials;
                 return sessionCredentials;
             }

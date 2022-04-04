@@ -7,5 +7,4 @@ public abstract class BaseStorageProviderTest<TModule, TStorageProvider, TAsyncS
     where TStorageProvider : class, IStorageProvider
     where TAsyncStorageProvider : class, IAsyncStorageProvider
 {
-    
 }

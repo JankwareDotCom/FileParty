@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FileParty.Core.Enums;
@@ -32,7 +31,7 @@ public class CredentialFactoryShould
         await using var sp = this.AddFileParty(c => c.AddModule(cfg)).BuildServiceProvider();
         var storageProviderFactory = sp.GetRequiredService<IAsyncFilePartyFactory>();
         var storageProvider = await storageProviderFactory.GetAsyncStorageProvider();
-        
+
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
@@ -40,7 +39,7 @@ public class CredentialFactoryShould
         inputStream.Position = 0;
 
         var key = Guid.NewGuid().ToString();
-        
+
         try
         {
             await storageProvider.WriteAsync(key, inputStream, WriteMode.Create, CancellationToken.None);
@@ -49,12 +48,12 @@ public class CredentialFactoryShould
         finally
         {
             await storageProvider.DeleteAsync(key, CancellationToken.None);
-            Assert.False(await storageProvider.ExistsAsync(key, CancellationToken.None));    
+            Assert.False(await storageProvider.ExistsAsync(key, CancellationToken.None));
         }
     }
-    
+
     [Theory]
-    [InlineData(null, null)]        // default profile, default place
+    [InlineData(null, null)] // default profile, default place
     [InlineData("CredentialFactoryShould", null)] // profile at default place
     [InlineData("CredentialFactoryShould", "TempDirectory")] // profile at place
     [InlineData(null, "TempDirectory")] // default profile at place
@@ -76,7 +75,7 @@ public class CredentialFactoryShould
                 SecretKey = creds.SecretKey,
                 Name = _bucketName,
                 Region = _regionName
-            });    
+            });
         }
     }
 
@@ -101,7 +100,7 @@ public class CredentialFactoryShould
             Region = _regionName
         });
     }
-    
+
     [Fact]
     public async Task CreateCredentials_UsingSession()
     {
@@ -111,7 +110,7 @@ public class CredentialFactoryShould
             Name = _bucketName,
             DurationSeconds = 15 * 60
         };
-        
+
         await _credFactory.GetAmazonCredentials(cfg).GetCredentialsAsync();
 
         await EnsureFileCreationAndDeletion(cfg);
@@ -128,12 +127,9 @@ public class CredentialFactoryShould
         };
 
         await _credFactory.GetAmazonCredentials(cfg).GetCredentialsAsync();
-        
+
         await Task.Delay(TimeSpan.FromSeconds(cfg.DurationSeconds), CancellationToken.None);
-        await Assert.ThrowsAnyAsync<Exception>(async () =>
-        {
-            await EnsureFileCreationAndDeletion(cfg);
-        });
+        await Assert.ThrowsAnyAsync<Exception>(async () => { await EnsureFileCreationAndDeletion(cfg); });
     }
 
     [Fact]
@@ -143,36 +139,35 @@ public class CredentialFactoryShould
         {
             var cfg = new AWSRoleBasedConfiguration()
             {
-                Name = _bucketName, 
-                Region = _regionName, 
+                Name = _bucketName,
+                Region = _regionName,
                 RoleArn = _roleArn,
                 ExternalId = _roleExternalId
             };
-        
+
             await _credFactory.GetAmazonCredentials(cfg).GetCredentialsAsync();
-            await EnsureFileCreationAndDeletion(cfg);    
+            await EnsureFileCreationAndDeletion(cfg);
         }
-        
     }
 }
 
 public class AWSConfigConfigurator : IDisposable, IAsyncDisposable
 {
-    private static readonly AutoResetEvent AwsConfiguratorResetEvent = new AutoResetEvent(true);
-    private static readonly string[] ProfileNames = { "default", nameof(CredentialFactoryShould) };
-    private readonly bool _isTempDir;
-    private readonly string _profileLocation;
-    private readonly string[] _originalFiles;
+    private static readonly AutoResetEvent AwsConfiguratorResetEvent = new(true);
+    private static readonly string[] ProfileNames = {"default", nameof(CredentialFactoryShould)};
     private readonly Guid _instanceId = Guid.NewGuid();
-    
-    public string ProfileDirectory { get; }
-    
+    private readonly bool _isTempDir;
+    private readonly string[] _originalFiles;
+    private readonly string _profileLocation;
+
     /// <summary>
-    /// Creates AWS Profile in given location, and if one already exists,
-    /// preserves it during the test and restores after testing
+    ///     Creates AWS Profile in given location, and if one already exists,
+    ///     preserves it during the test and restores after testing
     /// </summary>
-    /// <param name="profileLocation">when "TempDirectory" it will use the Env Temp Dir,
-    /// otherwise it will use the default location for AWS Configs</param>
+    /// <param name="profileLocation">
+    ///     when "TempDirectory" it will use the Env Temp Dir,
+    ///     otherwise it will use the default location for AWS Configs
+    /// </param>
     public AWSConfigConfigurator(string accessKey, string secretKey, string profileLocation = null)
     {
         _profileLocation = profileLocation;
@@ -181,7 +176,7 @@ public class AWSConfigConfigurator : IDisposable, IAsyncDisposable
         Debug.WriteLine($"{profileLocation ?? "DefaultProfileLocation"} {_instanceId} now owns lock");
         _isTempDir = profileLocation == "TempDirectory";
         ProfileDirectory = _isTempDir
-            ? Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar) + 
+            ? Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar) +
               Path.DirectorySeparatorChar + _instanceId + Path.DirectorySeparatorChar
             : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).TrimEnd(Path.DirectorySeparatorChar) +
               Path.DirectorySeparatorChar + ".aws" + Path.DirectorySeparatorChar;
@@ -195,11 +190,11 @@ public class AWSConfigConfigurator : IDisposable, IAsyncDisposable
         foreach (var originalFile in _originalFiles)
         {
             File.Move(
-                originalFile, 
+                originalFile,
                 ProfileDirectory + _instanceId + Path.DirectorySeparatorChar + Path.GetFileName(originalFile)
             );
         }
-        
+
         // creates new configs from env vars
         var configs = new List<string>();
         foreach (var pn in ProfileNames)
@@ -208,8 +203,16 @@ public class AWSConfigConfigurator : IDisposable, IAsyncDisposable
             configs.Add($"aws_access_key_id={accessKey}");
             configs.Add($"aws_secret_access_key={secretKey}");
         }
-        
+
         File.WriteAllLines(ProfileDirectory + "credentials", configs);
+    }
+
+    public string ProfileDirectory { get; }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return new ValueTask();
     }
 
     public void Dispose()
@@ -219,7 +222,7 @@ public class AWSConfigConfigurator : IDisposable, IAsyncDisposable
         {
             File.Delete(testFile);
         }
-        
+
         // moves original files back
         foreach (var originalFile in _originalFiles)
         {
@@ -232,14 +235,8 @@ public class AWSConfigConfigurator : IDisposable, IAsyncDisposable
         {
             Directory.Delete(ProfileDirectory, true);
         }
-        
+
         Debug.WriteLine($"{_profileLocation ?? "DefaultProfileLocation"} {_instanceId} is releasing the lock");
         AwsConfiguratorResetEvent.Set();
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        Dispose();
-        return new ValueTask();
     }
 }
