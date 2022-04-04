@@ -149,6 +149,26 @@ public class CredentialFactoryShould
             await EnsureFileCreationAndDeletion(cfg);
         }
     }
+    
+    [Fact(Skip = "Requires External AWS Account")]
+    public async Task CreateCredentials_UsingRole_ExternalAccount()
+    {
+        await using (_ = new AWSConfigConfigurator(_accessKey, _secretKey))
+        {
+            var externalConfig = Environment.GetEnvironmentVariable("fileparty_s3_external_role_config")?.Split(';');
+            Assert.NotNull(externalConfig);
+            var cfg = new AWSRoleBasedConfiguration
+            {
+                Name = externalConfig[0],
+                Region = _regionName,
+                RoleArn = externalConfig[1],
+                ExternalId = externalConfig[2]
+            };
+
+            await _credFactory.GetAmazonCredentials(cfg).GetCredentialsAsync();
+            await EnsureFileCreationAndDeletion(cfg);
+        }
+    }
 }
 
 public class AWSConfigConfigurator : IDisposable, IAsyncDisposable
@@ -224,9 +244,9 @@ public class AWSConfigConfigurator : IDisposable, IAsyncDisposable
         }
 
         // moves original files back
-        foreach (var originalFile in _originalFiles)
+        foreach (var ogFile in Directory.GetFiles(ProfileDirectory + _instanceId))
         {
-            File.Move(originalFile, ProfileDirectory + Path.GetFileName(originalFile));
+            File.Move(ogFile, ProfileDirectory + Path.GetFileName(ogFile));
         }
 
         // cleans up mess
