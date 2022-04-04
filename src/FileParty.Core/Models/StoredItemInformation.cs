@@ -29,7 +29,7 @@ namespace FileParty.Core.Models
 
         /// <inheritdoc />
         public Dictionary<string, object> Properties { get; } =
-            new(StringComparer.InvariantCultureIgnoreCase);
+            new Dictionary<string, object>(StringComparer.InvariantCultureIgnoreCase);
 
 
         /// <summary>

@@ -13,7 +13,7 @@ namespace FileParty.Core.Registration
 {
     public static class FileParty
     {
-        private static readonly ConcurrentDictionary<Type, ConcurrentBag<ServiceDescriptor>> ModuleDependencies = new();
+        private static readonly ConcurrentDictionary<Type, ConcurrentBag<ServiceDescriptor>> ModuleDependencies = new ConcurrentDictionary<Type, ConcurrentBag<ServiceDescriptor>>();
 
         internal static IEnumerable<ServiceDescriptor> GetModuleDependencies<TModule>()
             where TModule : class, IFilePartyModule, new()
@@ -148,8 +148,8 @@ namespace FileParty.Core.Registration
 
     internal class FilePartyConfiguration : IFilePartyConfiguration, IConfiguredFileParty
     {
-        private static readonly object DefaultModuleTypeLock = new();
-        private readonly object _serviceCollectionLock = new();
+        private static readonly object DefaultModuleTypeLock = new object();
+        private readonly object _serviceCollectionLock = new object();
 
         private Type _defaultModuleType;
         private IServiceCollection _serviceCollection;

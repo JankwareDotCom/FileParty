@@ -50,7 +50,7 @@ namespace FileParty.Providers.AWS.S3
             {
                 throw;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 throw Errors.InvalidConfiguration;
             }

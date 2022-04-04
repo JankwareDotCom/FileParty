@@ -8,10 +8,10 @@ namespace FileParty.Core.WriteProgress
 {
     public class WriteProgressSubscriptionManager : IWriteProgressSubscriptionManager
     {
-        private readonly ConcurrentDictionary<Guid, WriteProgressHandler> _allHandlers = new();
+        private readonly ConcurrentDictionary<Guid, WriteProgressHandler> _allHandlers = new ConcurrentDictionary<Guid, WriteProgressHandler>();
 
         private readonly ConcurrentDictionary<Guid, ConcurrentDictionary<Guid, WriteProgressHandler>> _requestHandlers =
-            new();
+            new ConcurrentDictionary<Guid, ConcurrentDictionary<Guid, WriteProgressHandler>>();
 
         public Guid SubscribeToAll(WriteProgressHandler handler)
         {
