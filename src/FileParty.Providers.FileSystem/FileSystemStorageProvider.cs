@@ -22,18 +22,19 @@ namespace FileParty.Providers.FileSystem
             _config = config;
             DirectorySeparatorCharacter = config.DirectorySeparationCharacter;
         }
-        
+
         public virtual char DirectorySeparatorCharacter { get; }
 
         public async Task WriteAsync(FilePartyWriteRequest request, CancellationToken cancellationToken = default)
         {
             var storagePointer = request.StoragePointer;
             var writeMode = request.WriteMode;
-            
+
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
-            
-            if (request.Stream is null) throw new ArgumentNullException(nameof(request), "Request Stream may not be null");
-            
+
+            if (request.Stream is null)
+                throw new ArgumentNullException(nameof(request), "Request Stream may not be null");
+
             var exists = await ExistsAsync(storagePointer, cancellationToken);
 
             switch (exists)
@@ -66,12 +67,14 @@ namespace FileParty.Providers.FileSystem
                     await writeStream.FlushAsync(cancellationToken);
                     totalBytesWritten += bytesRead;
 
-                    WriteProgressEvent?.Invoke(this, new WriteProgressEventArgs(request.Id, storagePointer, totalBytesWritten, streamSize));
-                } while (bytesRead > 0 && totalBytesWritten < streamSize);    
+                    WriteProgressEvent?.Invoke(this,
+                        new WriteProgressEventArgs(request.Id, storagePointer, totalBytesWritten, streamSize));
+                } while (bytesRead > 0 && totalBytesWritten < streamSize);
             }
         }
 
-        public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode, CancellationToken cancellationToken = default)
+        public virtual async Task WriteAsync(string storagePointer, Stream stream, WriteMode writeMode,
+            CancellationToken cancellationToken = default)
         {
             var request = FilePartyWriteRequest.Create(storagePointer, stream, out _, writeMode);
             await WriteAsync(request, cancellationToken);
@@ -80,7 +83,7 @@ namespace FileParty.Providers.FileSystem
         public virtual Task<Stream> ReadAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
-            
+
             if (!TryGetStoredItemType(storagePointer, out var type)) throw Errors.FileNotFoundException;
 
             if (type != StoredItemType.File) throw Errors.MustBeFile;
@@ -92,31 +95,34 @@ namespace FileParty.Providers.FileSystem
         public virtual Task DeleteAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
-            
+
             if (!TryGetStoredItemType(storagePointer, out var type) || type == null)
                 throw Errors.FileNotFoundException;
 
             if (type is StoredItemType.File)
                 File.Delete(storagePointer);
-            else if (type is StoredItemType.Directory) Directory.Delete(storagePointer, true);
+            else if (type is StoredItemType.Directory)
+                Directory.Delete(storagePointer, true);
 
             return Task.CompletedTask;
         }
 
-        public virtual Task DeleteAsync(IEnumerable<string> storagePointers, CancellationToken cancellationToken = default)
+        public virtual Task DeleteAsync(IEnumerable<string> storagePointers,
+            CancellationToken cancellationToken = default)
         {
             var storagePointerArray = storagePointers
                 .Select(s => ApplyBaseDirectoryToStoragePointer(ref s))
                 .ToArray();
-            
+
             foreach (var storagePointer in storagePointerArray)
             {
                 if (!TryGetStoredItemType(storagePointer, out var type) || type == null)
                     continue;
-                
+
                 if (type is StoredItemType.File)
                     File.Delete(storagePointer);
-                else if (type is StoredItemType.Directory) Directory.Delete(storagePointer, true);
+                else if (type is StoredItemType.Directory)
+                    Directory.Delete(storagePointer, true);
             }
 
             return Task.CompletedTask;
@@ -125,9 +131,8 @@ namespace FileParty.Providers.FileSystem
         public virtual Task<bool> ExistsAsync(string storagePointer, CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
-            
-            return Task.FromResult(
-                TryGetStoredItemType(storagePointer, out var _));
+
+            return Task.FromResult(TryGetStoredItemType(storagePointer, out _));
         }
 
         public virtual Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
@@ -136,7 +141,7 @@ namespace FileParty.Providers.FileSystem
             var storagePointerArray = storagePointers
                 .Select(s => ApplyBaseDirectoryToStoragePointer(ref s))
                 .ToArray();
-            
+
             IDictionary<string, bool> result = storagePointerArray
                 .ToDictionary(
                     k => k,
@@ -156,8 +161,9 @@ namespace FileParty.Providers.FileSystem
             CancellationToken cancellationToken = default)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
-            
-            if (!TryGetStoredItemType(storagePointer, out var type) || type == null) return null;
+
+            if (!TryGetStoredItemType(storagePointer, out var type) || type == null)
+                return Task.FromResult<IStoredItemInformation>(null);
 
             var fileInfo = new FileInfo(storagePointer);
             var directoryPath = Path.GetDirectoryName(storagePointer);
@@ -181,21 +187,15 @@ namespace FileParty.Providers.FileSystem
         public virtual bool TryGetStoredItemType(string storagePointer, out StoredItemType? type)
         {
             ApplyBaseDirectoryToStoragePointer(ref storagePointer);
-            
+
             type = null;
 
-            try
-            {
-                if (File.Exists(storagePointer))
-                    type = StoredItemType.File;
-                else if (Directory.Exists(storagePointer)) type = StoredItemType.Directory;
+            if (File.Exists(storagePointer))
+                type = StoredItemType.File;
+            else if (Directory.Exists(storagePointer))
+                type = StoredItemType.Directory;
 
-                return type != null;
-            }
-            catch
-            {
-                return false;
-            }
+            return type != null;
         }
 
         public void Write(FilePartyWriteRequest request)
@@ -251,17 +251,17 @@ namespace FileParty.Providers.FileSystem
         protected virtual string ApplyBaseDirectoryToStoragePointer(ref string storagePointer)
         {
             var basePath = GetBasePath();
-            
+
             if (string.IsNullOrWhiteSpace(storagePointer))
             {
                 throw Errors.StoragePointerMustHaveValue;
             }
-            
+
             if (string.IsNullOrWhiteSpace(basePath))
             {
                 return storagePointer;
             }
-            
+
             if (storagePointer.StartsWith(basePath + DirectorySeparatorCharacter))
             {
                 return storagePointer;

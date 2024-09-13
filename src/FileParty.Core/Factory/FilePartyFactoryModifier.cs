@@ -13,7 +13,7 @@ namespace FileParty.Core.Factory
         private readonly IEnumerable<IFilePartyModuleConfiguration> _moduleConfigurations;
 
         public FilePartyFactoryModifier(
-            IConfiguredFileParty filePartyConfiguration, 
+            IConfiguredFileParty filePartyConfiguration,
             IEnumerable<IFilePartyModuleConfiguration> moduleConfigurations)
         {
             _filePartyConfiguration = filePartyConfiguration;
@@ -28,9 +28,9 @@ namespace FileParty.Core.Factory
             if (configuration == null) return;
 
             if (!(_moduleConfigurations
-                    .FirstOrDefault(f =>
-                        f is FilePartyModuleConfiguration<TModule>) 
-                is FilePartyModuleConfiguration<TModule> moduleConfiguration))
+                        .FirstOrDefault(f =>
+                            f is FilePartyModuleConfiguration<TModule>)
+                    is FilePartyModuleConfiguration<TModule> moduleConfiguration))
             {
                 throw Errors.SPNotFound;
             }

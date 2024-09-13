@@ -10,26 +10,27 @@ namespace FileParty.Core.Factory
 {
     public class FilePartyFactory : IFilePartyFactory
     {
-        private readonly IEnumerable<IFilePartyModuleConfiguration> _moduleConfigurations;
         private readonly IConfiguredFileParty _filePartyConfiguration;
+        private readonly IEnumerable<IFilePartyModuleConfiguration> _moduleConfigurations;
         private readonly IWriteProgressRelay _relay;
-        
+
         public FilePartyFactory(
-            IEnumerable<IFilePartyModuleConfiguration> moduleConfigurations, 
-            IConfiguredFileParty filePartyConfiguration, 
+            IEnumerable<IFilePartyModuleConfiguration> moduleConfigurations,
+            IConfiguredFileParty filePartyConfiguration,
             IWriteProgressRelay relay)
         {
             _moduleConfigurations = moduleConfigurations;
             _filePartyConfiguration = filePartyConfiguration;
             _relay = relay;
         }
-        
+
         public IStorageProvider GetStorageProvider()
         {
-            var storageProvider = _filePartyConfiguration.DefaultModuleType != null && typeof(IFilePartyModule).IsAssignableFrom(_filePartyConfiguration.DefaultModuleType)
+            var storageProvider = _filePartyConfiguration.DefaultModuleType != null &&
+                                  typeof(IFilePartyModule).IsAssignableFrom(_filePartyConfiguration.DefaultModuleType)
                 ? _moduleConfigurations
-                    .Last(l => 
-                        l.GetType().IsGenericType && 
+                    .Last(l =>
+                        l.GetType().IsGenericType &&
                         l.GetType().GenericTypeArguments
                             .Contains(_filePartyConfiguration.DefaultModuleType))
                     .GetStorageProvider()
@@ -43,7 +44,8 @@ namespace FileParty.Core.Factory
         {
             try
             {
-                var storageProvider = _moduleConfigurations.Last(f => f is FilePartyModuleConfiguration<TModule>).GetStorageProvider();
+                var storageProvider = _moduleConfigurations.Last(f => f is FilePartyModuleConfiguration<TModule>)
+                    .GetStorageProvider();
                 storageProvider.WriteProgressEvent += _relay.RelayWriteProgressEvent;
                 return storageProvider;
             }
@@ -53,15 +55,15 @@ namespace FileParty.Core.Factory
             }
         }
 
-        public IStorageProvider GetStorageProvider<TModule>(StorageProviderConfiguration<TModule> configuration) 
+        public IStorageProvider GetStorageProvider<TModule>(StorageProviderConfiguration<TModule> configuration)
             where TModule : class, IFilePartyModule, new()
         {
-            if (!(_moduleConfigurations.LastOrDefault(f => f is FilePartyModuleConfiguration<TModule>) 
-                is FilePartyModuleConfiguration<TModule> modCfg))
+            if (!(_moduleConfigurations.LastOrDefault(f => f is FilePartyModuleConfiguration<TModule>)
+                    is FilePartyModuleConfiguration<TModule> modCfg))
             {
                 throw Errors.SPNotFound;
             }
-            
+
             var storageProvider = modCfg.GetStorageProvider(configuration);
             storageProvider.WriteProgressEvent += _relay.RelayWriteProgressEvent;
             return storageProvider;
@@ -77,7 +79,8 @@ namespace FileParty.Core.Factory
             return GetStorageProvider<TModule>();
         }
 
-        public IStorageReader GetStorageReader<TModule>(StorageProviderConfiguration<TModule> configuration) where TModule : class, IFilePartyModule, new()
+        public IStorageReader GetStorageReader<TModule>(StorageProviderConfiguration<TModule> configuration)
+            where TModule : class, IFilePartyModule, new()
         {
             return GetStorageProvider(configuration);
         }
@@ -92,7 +95,8 @@ namespace FileParty.Core.Factory
             return GetStorageProvider<TModule>();
         }
 
-        public IStorageWriter GetStorageWriter<TModule>(StorageProviderConfiguration<TModule> configuration) where TModule : class, IFilePartyModule, new()
+        public IStorageWriter GetStorageWriter<TModule>(StorageProviderConfiguration<TModule> configuration)
+            where TModule : class, IFilePartyModule, new()
         {
             return GetStorageProvider<TModule>();
         }

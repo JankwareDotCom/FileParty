@@ -13,13 +13,12 @@ namespace FileParty.Core
         where TModule : class, IFilePartyModule, new()
     {
         private readonly Guid _instanceId = Guid.NewGuid();
-        public virtual char DirectorySeparatorCharacter => Configuration.DirectorySeparationCharacter;
 
         // ReSharper disable once MemberCanBePrivate.Global
         protected readonly StorageProviderConfiguration<TModule> Configuration;
-        
+
         /// <summary>
-        /// Constructor for Storage Provider.
+        ///     Constructor for Storage Provider.
         /// </summary>
         /// <param name="configuration">Configuration for storage providers (writers and readers) in a module</param>
         protected BaseStorageProvider(StorageProviderConfiguration<TModule> configuration)
@@ -28,6 +27,8 @@ namespace FileParty.Core
             Configuration = configuration;
         }
 
+        public virtual char DirectorySeparatorCharacter => Configuration.DirectorySeparationCharacter;
+
         public abstract void Write(FilePartyWriteRequest request);
 
         public virtual void Write(string storagePointer, Stream stream, WriteMode writeMode)
@@ -35,11 +36,11 @@ namespace FileParty.Core
             var request = FilePartyWriteRequest.Create(storagePointer, stream, out _, writeMode);
             Write(request);
         }
-        
+
         public abstract void Delete(string storagePointer);
 
         public abstract void Delete(IEnumerable<string> storagePointers);
-        
+
         public abstract Stream Read(string storagePointer);
 
         public abstract bool Exists(string storagePointer);
@@ -50,11 +51,11 @@ namespace FileParty.Core
 
         public abstract IStoredItemInformation GetInformation(string storagePointer);
 
-        public virtual void Dispose()
+        public abstract event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
+
+        protected virtual void Dispose()
         {
             Debug.WriteLine($"{GetType().Name} - {_instanceId}: Disposed at {DateTime.UtcNow:O}");
         }
-
-        public abstract event EventHandler<WriteProgressEventArgs> WriteProgressEvent;
     }
 }

@@ -5,17 +5,16 @@ namespace FileParty.Core.EventArgs
 {
     public class WriteProgressEventArgs
     {
-        public Guid WriteRequestId { get; }
-        
-        public WriteProgressInfo WriteProgressInfo { get; }
-
-        /// <summary>
-        /// DateTime when the event was raised
-        /// </summary>
-        public DateTime RaiseDate { get; set; } = DateTime.UtcNow;
-
         public WriteProgressEventArgs(Guid id, string storagePointer, long totalBytesTransferred, long totalFileBytes)
+            : this(id, storagePointer, totalBytesTransferred, totalFileBytes, DateTime.MinValue)
         {
+        }
+
+
+        public WriteProgressEventArgs(Guid id, string storagePointer, long totalBytesTransferred, long totalFileBytes,
+            DateTime requestCreatedAt)
+        {
+            RaiseDate = DateTime.UtcNow;
             WriteRequestId = id;
             WriteProgressInfo = new WriteProgressInfo
             {
@@ -24,8 +23,18 @@ namespace FileParty.Core.EventArgs
                 TotalBytesTransferred = totalBytesTransferred,
                 TotalBytesRemaining = totalFileBytes - totalBytesTransferred,
                 TotalFileBytes = totalFileBytes,
-                PercentComplete = (int) Math.Round((double) (totalBytesTransferred * 100) / totalFileBytes)
+                PercentComplete = (int) Math.Round((double) (totalBytesTransferred * 100) / totalFileBytes),
+                RequestCreatedAt = requestCreatedAt
             };
         }
+
+        public Guid WriteRequestId { get; }
+
+        public WriteProgressInfo WriteProgressInfo { get; }
+
+        /// <summary>
+        ///     DateTime when the event was raised
+        /// </summary>
+        public DateTime RaiseDate { get; set; }
     }
 }

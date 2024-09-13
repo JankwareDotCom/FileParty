@@ -4,10 +4,6 @@ namespace FileParty.Core.Exceptions
 {
     public class StorageException : Exception
     {
-        public StorageException()
-        {
-        }
-
         public StorageException(string message)
         {
             Message = message;
@@ -17,7 +13,7 @@ namespace FileParty.Core.Exceptions
         {
             ErrorCode = errorCode;
         }
-        
+
         // ReSharper disable once UnusedAutoPropertyAccessor.Global
         // ReSharper disable once MemberCanBePrivate.Global
         public string ErrorCode { get; } = string.Empty;
