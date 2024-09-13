@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>FileParty.Core.Tests</AssemblyName>
     <RootNamespace>FileParty.Core.Tests</RootNamespace>
     <PackageId>FileParty.Core.Tests</PackageId>
