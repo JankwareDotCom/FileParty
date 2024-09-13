@@ -4,7 +4,7 @@
     <IsPackable>false</IsPackable>
     <AssemblyName>FileParty.Providers.FileSystem.Tests</AssemblyName>
     <RootNamespace>FileParty.Providers.FileSystem.Tests</RootNamespace>
-    <TargetFramework>net8s.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
