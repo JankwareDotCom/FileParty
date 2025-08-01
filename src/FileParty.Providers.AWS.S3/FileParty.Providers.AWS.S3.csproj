@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="[3.7.8,4)" IncludeAssets="all" PrivateAssets="compile"/>
-    <PackageReference Include="AWSSDK.SecurityToken" Version="[3.7.1,4)"/>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.2" IncludeAssets="all" PrivateAssets="compile"/>
+    <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.1.7"/>
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*"/>
   </ItemGroup>
 
