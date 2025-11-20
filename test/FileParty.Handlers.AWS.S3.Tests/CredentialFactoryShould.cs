@@ -123,7 +123,7 @@ public class CredentialFactoryShould
         {
             Region = _regionName,
             Name = _bucketName,
-            DurationSeconds = 15 * 60
+            DurationSeconds = 15 * 60 // 15 minute duration is minimum
         };
 
         await _credFactory.GetAmazonCredentials(cfg).GetCredentialsAsync();
