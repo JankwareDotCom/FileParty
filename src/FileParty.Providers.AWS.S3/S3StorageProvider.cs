@@ -452,9 +452,9 @@ namespace FileParty.Providers.AWS.S3
                         }, cancellationToken)
                         .ConfigureAwait(false);
 
-                    if (!directoryContents.S3Objects.Any()) break;
+                    if (directoryContents.S3Objects is null) break;
 
-                    await DeleteAsync(directoryContents.S3Objects.Select(s => s.Key).ToArray(), cancellationToken);
+                    await DeleteAsync(directoryContents.S3Objects?.Select(s => s.Key).ToArray(), cancellationToken);
                 }
             }
         }

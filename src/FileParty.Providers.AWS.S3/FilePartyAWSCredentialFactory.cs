@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Amazon.Runtime;
 using Amazon.Runtime.CredentialManagement;
 using Amazon.Runtime.Credentials;
@@ -36,15 +37,23 @@ namespace FileParty.Providers.AWS.S3
                         return DefaultAWSCredentialsIdentityResolver.GetCredentials();
                     case AWSStoredProfileConfiguration storedProfileConfiguration:
                     {
-                        var chain = string.IsNullOrWhiteSpace(storedProfileConfiguration.ProfileLocation)
+                        var profileLocation = string.IsNullOrWhiteSpace(storedProfileConfiguration.ProfileLocation)
+                            ? null
+                            : Directory.Exists(storedProfileConfiguration.ProfileLocation)
+                                ? Path.Combine(storedProfileConfiguration.ProfileLocation, "credentials")
+                                : storedProfileConfiguration.ProfileLocation;
+
+                        var profileName = string.IsNullOrWhiteSpace(storedProfileConfiguration.ProfileName)
+                            ? "default"
+                            : storedProfileConfiguration.ProfileName;
+                        
+                        var chain = string.IsNullOrWhiteSpace(profileLocation)
                             ? new CredentialProfileStoreChain()
-                            : new CredentialProfileStoreChain(storedProfileConfiguration.ProfileLocation);
-
-                        var hasCreds = string.IsNullOrWhiteSpace(storedProfileConfiguration.ProfileName)
-                            ? chain.TryGetAWSCredentials("default", out var creds)
-                            : chain.TryGetAWSCredentials(storedProfileConfiguration.ProfileName, out creds);
-
-                        return hasCreds ? creds : throw Errors.InvalidConfiguration;
+                            : new CredentialProfileStoreChain(profileLocation);
+                        
+                        return chain.TryGetAWSCredentials(profileName, out var creds) 
+                            ? creds 
+                            : throw Errors.InvalidConfiguration;
                     }
                     case AWSInstanceProfileConfiguration instanceConfiguration:
                         return new InstanceProfileAWSCredentials(instanceConfiguration.Role);
