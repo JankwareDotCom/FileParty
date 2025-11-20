@@ -1,5 +1,7 @@
 ﻿using System;
 using Amazon.Runtime;
+using Amazon.Runtime.CredentialManagement;
+using Amazon.Runtime.Credentials;
 using Amazon.S3;
 using Amazon.SecurityToken;
 using FileParty.Core.Exceptions;
@@ -31,9 +33,19 @@ namespace FileParty.Providers.AWS.S3
                             .GetAwaiter()
                             .GetResult();
                     case AWSDefaultConfiguration _:
-                        return FallbackCredentialsFactory.GetCredentials(false);
+                        return DefaultAWSCredentialsIdentityResolver.GetCredentials();
                     case AWSStoredProfileConfiguration storedProfileConfiguration:
-                        return storedProfileConfiguration.GetConfig();
+                    {
+                        var chain = string.IsNullOrWhiteSpace(storedProfileConfiguration.ProfileLocation)
+                            ? new CredentialProfileStoreChain()
+                            : new CredentialProfileStoreChain(storedProfileConfiguration.ProfileLocation);
+
+                        var hasCreds = string.IsNullOrWhiteSpace(storedProfileConfiguration.ProfileName)
+                            ? chain.TryGetAWSCredentials("default", out var creds)
+                            : chain.TryGetAWSCredentials(storedProfileConfiguration.ProfileName, out creds);
+
+                        return hasCreds ? creds : throw Errors.InvalidConfiguration;
+                    }
                     case AWSInstanceProfileConfiguration instanceConfiguration:
                         return new InstanceProfileAWSCredentials(instanceConfiguration.Role);
                 }
