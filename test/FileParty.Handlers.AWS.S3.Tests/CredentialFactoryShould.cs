@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon.Runtime;
+using Amazon.S3;
 using FileParty.Core.Enums;
 using FileParty.Core.Interfaces;
 using FileParty.Core.Models;
@@ -116,7 +118,7 @@ public class CredentialFactoryShould
         await EnsureFileCreationAndDeletion(cfg);
     }
 
-    [Fact(Skip = "Long Running Test")]
+    [Fact(Skip = "Long Running Test")] // last manually verified 2025-11-20
     public async Task CreateCredentials_ButThrowDueToExpired_UsingSession()
     {
         var cfg = new AWSSessionCredentials(_accessKey, _secretKey)
@@ -125,11 +127,26 @@ public class CredentialFactoryShould
             Name = _bucketName,
             DurationSeconds = 15 * 60 // 15 minute duration is minimum
         };
-
-        await _credFactory.GetAmazonCredentials(cfg).GetCredentialsAsync();
-
-        await Task.Delay(TimeSpan.FromSeconds(cfg.DurationSeconds), CancellationToken.None);
-        await Assert.ThrowsAnyAsync<Exception>(async () => { await EnsureFileCreationAndDeletion(cfg); });
+        
+        var creds = await _credFactory.GetAmazonCredentials(cfg).GetCredentialsAsync();
+        
+        using var client = new AmazonS3Client(
+            new SessionAWSCredentials(creds.AccessKey, creds.SecretKey, creds.Token),
+            new AmazonS3Config
+            {
+                RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(_regionName)
+            });
+        
+        Assert.True((await client.ListObjectsAsync(cfg.Name)).HttpStatusCode == System.Net.HttpStatusCode.OK);
+        
+        await Task.Delay(TimeSpan.FromSeconds(cfg.DurationSeconds + 10), CancellationToken.None);
+        
+        var exc = await Assert.ThrowsAsync<AmazonS3Exception>(async () =>
+        {
+            await client.ListObjectsAsync(cfg.Name);
+        });
+        
+        Assert.Equal("The provided token has expired.", exc.Message);
     }
 
     [Fact]
@@ -150,6 +167,7 @@ public class CredentialFactoryShould
         }
     }
     
+    //[Fact] // last manually verified 2025-11-20
     [Fact(Skip = "Requires External AWS Account")]
     public async Task CreateCredentials_UsingRole_ExternalAccount()
     {
@@ -160,7 +178,7 @@ public class CredentialFactoryShould
             var cfg = new AWSRoleBasedConfiguration
             {
                 Name = externalConfig[0],
-                Region = _regionName,
+                Region = externalConfig[3],
                 RoleArn = externalConfig[1],
                 ExternalId = externalConfig[2]
             };
