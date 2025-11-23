@@ -60,7 +60,13 @@ namespace FileParty.Providers.AWS.S3.Config
                 ? nameof(FileParty) + "_" + nameof(AWS_S3Module) + "_" + _internalIdentifier
                 : RoleSessionName;
 
-            using (var stsClient = new AmazonSecurityTokenServiceClient(credFactory.GetAmazonCredentials(_baseConfig)))
+            var creds = credFactory.GetAmazonCredentials(_baseConfig);
+            var config = new AmazonSecurityTokenServiceConfig
+            {
+                RegionEndpoint = this.GetRegionEndpoint()
+            };
+            
+            using (var stsClient = new AmazonSecurityTokenServiceClient(creds, config))
             {
                 try
                 {
