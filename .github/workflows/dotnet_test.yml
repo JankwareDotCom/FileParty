@@ -17,11 +17,11 @@ jobs:
         dotnet-version: 10.0.x
     - name: Test
       run: |
-        dotnet test test/FileParty.Core.Tests/ --configuration Release --no-build --verbosity normal
-        dotnet test test/FileParty.Core.Registration.Tests/ --configuration Release --no-build --verbosity normal
-        dotnet test test/FileParty.Handlers.FileSystem.Tests/ --configuration Release --no-build --verbosity normal
-        dotnet test test/FileParty.Handlers.AWS.S3.Tests/ --configuration Release-V3 --no-build --verbosity normal
-        dotnet test test/FileParty.Handlers.AWS.S3.Tests/ --configuration Release-V4 --no-build --verbosity normal
+        dotnet test test/FileParty.Core.Tests/FileParty.Core.Tests.csproj --configuration Release --no-build --verbosity normal
+        dotnet test test/FileParty.Core.Registration.Tests/FileParty.Core.Registration.csproj --configuration Release --no-build --verbosity normal
+        dotnet test test/FileParty.Handlers.FileSystem.Tests/FileParty.Handlers.FileSystem.Tests.csproj --configuration Release --no-build --verbosity normal
+        dotnet test test/FileParty.Handlers.AWS.S3.Tests/FileParty.Handlers.AWS.S3.Tests.csproj --configuration Release-V3 --no-build --verbosity normal
+        dotnet test test/FileParty.Handlers.AWS.S3.Tests/FileParty.Handlers.AWS.S3.Tests.csproj --configuration Release-V4 --no-build --verbosity normal
       env:
         "fileparty_s3_region": ${{ secrets.TEST_S3_REGION }}
         "fileparty_s3_bucket": ${{ secrets.TEST_S3_BUCKET }}
