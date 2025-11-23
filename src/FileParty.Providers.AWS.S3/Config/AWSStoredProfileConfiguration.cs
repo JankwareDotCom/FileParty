@@ -33,16 +33,5 @@ namespace FileParty.Providers.AWS.S3.Config
 
         public string ProfileName { get; set; } = "default";
         public string ProfileLocation { get; set; }
-
-        internal StoredProfileAWSCredentials GetConfig()
-        {
-            return string.IsNullOrWhiteSpace(ProfileLocation)
-                ? string.IsNullOrWhiteSpace(ProfileName)
-                    ? new StoredProfileAWSCredentials()
-                    : new StoredProfileAWSCredentials(ProfileName)
-                : string.IsNullOrWhiteSpace(ProfileName)
-                    ? new StoredProfileAWSCredentials("default", ProfileLocation)
-                    : new StoredProfileAWSCredentials(ProfileName, ProfileLocation);
-        }
     }
 }

@@ -142,7 +142,7 @@ namespace FileParty.Providers.AWS.S3
                 using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
                 {
                     var _ = await s3Wrapper.ExecuteAsync(
-                        (s3Client) => GetInformationAsync(s3Client, storagePointer, cancellationToken));
+                        async (s3Client) => await GetInformationAsync(s3Client, storagePointer, cancellationToken));
                 }
 
                 return true;
@@ -153,12 +153,12 @@ namespace FileParty.Providers.AWS.S3
             }
         }
 
-        public virtual Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
+        public virtual async Task<IDictionary<string, bool>> ExistsAsync(IEnumerable<string> storagePointers,
             CancellationToken cancellationToken = default)
         {
             using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
             {
-                return s3Wrapper.ExecuteAsync((s3Client) =>
+                return await s3Wrapper.ExecuteAsync((s3Client) =>
                 {
                     IDictionary<string, bool> result = storagePointers
                         .ToDictionary(
@@ -170,12 +170,12 @@ namespace FileParty.Providers.AWS.S3
             }
         }
 
-        public Task<StoredItemType?> TryGetStoredItemTypeAsync(string storagePointer,
+        public async Task<StoredItemType?> TryGetStoredItemTypeAsync(string storagePointer,
             CancellationToken cancellationToken = default)
         {
             using (var s3Wrapper = new FilePartyS3ClientWrapper(_s3ClientFactory))
             {
-                return s3Wrapper.ExecuteAsync((s3Client) =>
+                return await s3Wrapper.ExecuteAsync((s3Client) =>
                     TryGetStoredItemTypeAsync(s3Client, storagePointer, cancellationToken));
             }
         }
@@ -276,7 +276,7 @@ namespace FileParty.Providers.AWS.S3
 
                 result.StoredType = StoredItemType.File;
                 result.Size = omInfo.ContentLength;
-                result.LastModifiedTimestamp = omInfo.LastModified.ToUniversalTime();
+                result.LastModifiedTimestamp = (omInfo.LastModified as DateTime?).GetValueOrDefault().ToUniversalTime();
                 result.StoragePointer = storagePointer;
                 return result;
             }
@@ -452,9 +452,9 @@ namespace FileParty.Providers.AWS.S3
                         }, cancellationToken)
                         .ConfigureAwait(false);
 
-                    if (!directoryContents.S3Objects.Any()) break;
+                    if (directoryContents.S3Objects is null || directoryContents.S3Objects.Count == 0) break;
 
-                    await DeleteAsync(directoryContents.S3Objects.Select(s => s.Key).ToArray(), cancellationToken);
+                    await DeleteAsync(directoryContents.S3Objects?.Select(s => s.Key).ToArray(), cancellationToken);
                 }
             }
         }
