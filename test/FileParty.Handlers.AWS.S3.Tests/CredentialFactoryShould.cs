@@ -165,7 +165,7 @@ public class CredentialFactoryShould
         }
     }
     
-    //[Fact] // last manually verified 2025-11-20
+    //[Fact] // last manually verified 2025-11-22
     [Fact(Skip = "Requires External AWS Account")]
     public async Task CreateCredentials_UsingRole_ExternalAccount()
     {

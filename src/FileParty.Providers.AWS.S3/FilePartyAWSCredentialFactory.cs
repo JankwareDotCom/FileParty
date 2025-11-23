@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Amazon.Runtime;
 using Amazon.Runtime.CredentialManagement;
@@ -86,13 +87,22 @@ namespace FileParty.Providers.AWS.S3
             if (!AWS_S3Module.IsAwsSdkV4) return FallbackCredentialsFactory.GetCredentials(false);
             
             // v4 support DefaultAWSCredentialsIdentityResolver.GetCredentials();
-            return (AWSCredentials)V4GetCredentialsMethod?.Invoke(null, null) ?? throw new InvalidOperationException("Unable to get credentials");
+            return (AWSCredentials)V4GetCredentialsMethod
+                ?.Invoke(
+                    null, 
+                    V4GetCredentialsMethod.GetParameters()
+                        .Select(s => Convert.ChangeType(null, s.ParameterType)).ToArray()) 
+                   ?? throw new InvalidOperationException("Unable to get credentials");
         }
 
+        
+        
         private static readonly MethodInfo V4GetCredentialsMethod =
             AWS_S3Module.IsAwsSdkV4
                 ? Type.GetType("Amazon.Runtime.Credentials.DefaultAWSCredentialsIdentityResolver, AWSSDK.Core")
-                    ?.GetMethod("GetCredentials", Type.EmptyTypes)
+                    ?.GetMethod("GetCredentials")
                 : null;
+        
+        
     }
 }
