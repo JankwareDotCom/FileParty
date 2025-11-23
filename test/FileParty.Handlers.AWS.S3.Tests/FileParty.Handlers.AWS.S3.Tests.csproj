@@ -24,11 +24,11 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug-V3' OR '$(Configuration)' == 'Release-V3'">
-    <PackageReference Include="AWSSDK.S3" Version="(3.7.400.1,4]" />
+    <PackageReference Include="AWSSDK.S3" Version="[3.7.400.1,4)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug-V4' OR '$(Configuration)' == 'Release-V4'">
-    <PackageReference Include="AWSSDK.S3" Version="(4.0.0,5]" />
+    <PackageReference Include="AWSSDK.S3" Version="[4.0.0,5)" />
   </ItemGroup>
 
   <ItemGroup>
