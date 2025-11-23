@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using Amazon.Runtime;
 using Amazon.Runtime.CredentialManagement;
 using Amazon.Runtime.Credentials;
@@ -34,7 +35,7 @@ namespace FileParty.Providers.AWS.S3
                             .GetAwaiter()
                             .GetResult();
                     case AWSDefaultConfiguration _:
-                        return DefaultAWSCredentialsIdentityResolver.GetCredentials();
+                        return GetDefaultCredentials();
                     case AWSStoredProfileConfiguration storedProfileConfiguration:
                     {
                         var profileLocation = string.IsNullOrWhiteSpace(storedProfileConfiguration.ProfileLocation)
@@ -78,5 +79,20 @@ namespace FileParty.Providers.AWS.S3
 
             throw Errors.InvalidConfiguration;
         }
+        
+        private static AWSCredentials GetDefaultCredentials()
+        {
+            // v3 support
+            if (!AWS_S3Module.IsAwsSdkV4) return FallbackCredentialsFactory.GetCredentials(false);
+            
+            // v4 support DefaultAWSCredentialsIdentityResolver.GetCredentials();
+            return (AWSCredentials)V4GetCredentialsMethod?.Invoke(null, null) ?? throw new InvalidOperationException("Unable to get credentials");
+        }
+
+        private static readonly MethodInfo V4GetCredentialsMethod =
+            AWS_S3Module.IsAwsSdkV4
+                ? Type.GetType("Amazon.Runtime.Credentials.DefaultAWSCredentialsIdentityResolver, AWSSDK.Core")
+                    ?.GetMethod("GetCredentials", Type.EmptyTypes)
+                : null;
     }
 }

@@ -9,6 +9,8 @@
     <Authors>FileParty.Core.Tests</Authors>
     <Company>FileParty.Core.Tests</Company>
     <Product>FileParty.Core.Tests</Product>
+    <Configurations>Debug;Release;Debug-V4;Release-V4</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

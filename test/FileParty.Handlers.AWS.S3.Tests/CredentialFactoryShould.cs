@@ -4,8 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Amazon.Runtime;
-using Amazon.S3;
 using FileParty.Core.Enums;
 using FileParty.Core.Interfaces;
 using FileParty.Core.Models;
@@ -14,6 +12,7 @@ using FileParty.Providers.AWS.S3;
 using FileParty.Providers.AWS.S3.Config;
 using FileParty.Providers.AWS.S3.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Xunit;
 
 namespace FileParty.Handlers.AWS.S3.Tests;
@@ -121,6 +120,10 @@ public class CredentialFactoryShould
     [Fact(Skip = "Long Running Test")] // last manually verified 2025-11-20
     public async Task CreateCredentials_ButThrowDueToExpired_UsingSession()
     {
+        var sc = new ServiceCollection();
+        sc.AddFileParty(c => c.AddModule<AWS_S3Module>(null));
+        await using var sp = sc.BuildServiceProvider();
+
         var cfg = new AWSSessionCredentials(_accessKey, _secretKey)
         {
             Region = _regionName,
@@ -128,20 +131,15 @@ public class CredentialFactoryShould
             DurationSeconds = 15 * 60 // 15 minute duration is minimum
         };
         
-        var creds = await _credFactory.GetAmazonCredentials(cfg).GetCredentialsAsync();
+        var clientFactory = sp.GetRequiredService<IFilePartyS3ClientFactory>();
         
-        using var client = new AmazonS3Client(
-            new SessionAWSCredentials(creds.AccessKey, creds.SecretKey, creds.Token),
-            new AmazonS3Config
-            {
-                RegionEndpoint = Amazon.RegionEndpoint.GetBySystemName(_regionName)
-            });
+        var client = clientFactory.GetClient(cfg);
         
         Assert.True((await client.ListObjectsAsync(cfg.Name)).HttpStatusCode == System.Net.HttpStatusCode.OK);
         
         await Task.Delay(TimeSpan.FromSeconds(cfg.DurationSeconds + 10), CancellationToken.None);
         
-        var exc = await Assert.ThrowsAsync<AmazonS3Exception>(async () =>
+        var exc = await Assert.ThrowsAsync<Exception>(async () =>
         {
             await client.ListObjectsAsync(cfg.Name);
         });

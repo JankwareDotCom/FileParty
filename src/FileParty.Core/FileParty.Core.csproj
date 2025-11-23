@@ -10,6 +10,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Title>Jankware FileParty</Title>
     <ReadMe>https://raw.githubusercontent.com/JankwareDotCom/FileParty/main/README.md</ReadMe>
+    <Configurations>Debug;Release;Debug-V4;Release-V4</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
 
 

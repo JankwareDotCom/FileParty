@@ -276,7 +276,7 @@ namespace FileParty.Providers.AWS.S3
 
                 result.StoredType = StoredItemType.File;
                 result.Size = omInfo.ContentLength;
-                result.LastModifiedTimestamp = omInfo.LastModified.GetValueOrDefault().ToUniversalTime();
+                result.LastModifiedTimestamp = (omInfo.LastModified as DateTime?).GetValueOrDefault().ToUniversalTime();
                 result.StoragePointer = storagePointer;
                 return result;
             }
