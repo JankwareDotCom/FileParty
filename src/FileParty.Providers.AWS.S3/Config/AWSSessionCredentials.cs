@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Amazon;
 using Amazon.Runtime;
 using Amazon.SecurityToken;
 using Amazon.SecurityToken.Model;
@@ -43,7 +44,14 @@ namespace FileParty.Providers.AWS.S3.Config
                 return _sessionCredentials;
             }
 
-            using (var stsClient = new AmazonSecurityTokenServiceClient(credFactory.GetAmazonCredentials(_baseConfig)))
+            var creds = credFactory.GetAmazonCredentials(_baseConfig);
+            
+            var config = new AmazonSecurityTokenServiceConfig
+            {
+                RegionEndpoint = this.GetRegionEndpoint()
+            };
+            
+            using (var stsClient = new AmazonSecurityTokenServiceClient(creds, config))
             {
                 var getSessionTokenRequest = new GetSessionTokenRequest
                 {
