@@ -83,16 +83,14 @@ namespace FileParty.Providers.AWS.S3
         
         private static AWSCredentials GetDefaultCredentials()
         {
-            // v3 support
-            if (!AWS_S3Module.IsAwsSdkV4) return FallbackCredentialsFactory.GetCredentials(false);
-            
-            // v4 support DefaultAWSCredentialsIdentityResolver.GetCredentials();
-            return (AWSCredentials)V4GetCredentialsMethod
-                ?.Invoke(
-                    null, 
-                    V4GetCredentialsMethod.GetParameters()
-                        .Select(s => Convert.ChangeType(null, s.ParameterType)).ToArray()) 
-                   ?? throw new InvalidOperationException("Unable to get credentials");
+            return !AWS_S3Module.IsAwsSdkV4
+                ? (AWSCredentials) V3GetCredentialsMethod
+                      ?.Invoke(null, new object[]{false})
+                  ?? throw new InvalidOperationException("Unable to get v3 credentials")
+                : (AWSCredentials) V4GetCredentialsMethod
+                      ?.Invoke(null, V4GetCredentialsMethod.GetParameters()
+                          .Select(s => Convert.ChangeType(null, s.ParameterType)).ToArray())
+                  ?? throw new InvalidOperationException("Unable to get credentials");
         }
 
         
@@ -103,6 +101,10 @@ namespace FileParty.Providers.AWS.S3
                     ?.GetMethod("GetCredentials")
                 : null;
         
-        
+        private static readonly MethodInfo V3GetCredentialsMethod =
+            !AWS_S3Module.IsAwsSdkV4
+                ? Type.GetType("Amazon.Runtime.FallbackCredentialsFactory, AWSSDK.Core")
+                    ?.GetMethod("GetCredentials", new[]{typeof(bool)})
+                : null;
     }
 }
