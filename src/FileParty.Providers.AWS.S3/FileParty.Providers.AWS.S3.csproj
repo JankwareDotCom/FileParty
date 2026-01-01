@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug' OR '$(Configuration)' == 'Release'">
-    <PackageReference Include="AWSSDK.S3" Version="[3.7.400,5)" IncludeAssets="all" PrivateAssets="compile"/>
+    <PackageReference Include="AWSSDK.S3" Version="[4.0.16.1, 5.0.0)" IncludeAssets="all" PrivateAssets="compile"/>
     <PackageReference Include="AWSSDK.SecurityToken" Version="[3.7.400,5)" IncludeAssets="all" PrivateAssets="compile"/>
   </ItemGroup>
   
