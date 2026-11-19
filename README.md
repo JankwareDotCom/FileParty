@@ -154,6 +154,8 @@ Just make an issue on the Repo.
 
 - Contributions are welcome.
 - Please make PRs into develop and remember to increment the version number for each project. All packages share one version.
+- Dependency floors in `src/` are a compatibility promise (see "Dependency ranges"). Dependabot only opens
+  security PRs for them (see `.github/dependabot.yml`). Raise a floor only on purpose, and update the README and CHANGELOG when you do.
 - Please name branches in the following formats
     - /bugfix/issue-fixed
     - /feature/feature-added

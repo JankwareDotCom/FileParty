@@ -1,19 +1,78 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# Dependabot policy for FileParty.
+#
+# The dependency versions in the shipped packages (src/) are *floors*, not "latest". Consumers on
+# older-but-supported AWS / Microsoft.Extensions versions must be able to take a new FileParty
+# without forced upgrades (see README "Dependency ranges"). Raising a floor is a deliberate,
+# reviewed decision, never a routine bump. So:
+#
+#   src/            security updates only, never routine version bumps
+#   test/           routine updates for test tooling, grouped; AWS SDK ranges are left alone
+#   samples/compat  never touched: its pins ARE the consumer versions we promise to support
+#   GitHub Actions  routine updates, grouped
+#
+# Any security PR against src/ must still pass the `compat` CI job. If a fix needs a floor above
+# what consumers pin, that job fails, and the floor change needs a conscious decision (and README/
+# CHANGELOG updates).
+#
+# Security PRs also need "Dependabot security updates" enabled in the repo's
+# Settings > Code security.
 
 version: 2
 updates:
+  # Shipped libraries: security updates only.
+  # open-pull-requests-limit: 0 disables version updates for this entry; security updates still run.
   - package-ecosystem: "nuget"
-    directory: "/src/FileParty.Core"
+    directories:
+      - "/src/FileParty.Core"
+      - "/src/FileParty.Providers.FileSystem"
+      - "/src/FileParty.Providers.AWS.S3"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    labels: [ "dependencies", "security" ]
+    commit-message:
+      prefix: "security"
+    groups:
+      library-security:
+        applies-to: security-updates
+        patterns: [ "*" ]
+
+  # Test projects: keep the test tooling current, batched into one PR per month.
+  # The AWSSDK ranges here mirror the library's V3/V4 build configurations, so they move with src/
+  # by hand, not on their own.
+  - package-ecosystem: "nuget"
+    directories:
+      - "/test/FileParty.Core.Tests"
+      - "/test/FileParty.Handlers.FileSystem.Tests"
+      - "/test/FileParty.Handlers.AWS.S3.Tests"
     schedule:
       interval: "monthly"
+    open-pull-requests-limit: 5
+    labels: [ "dependencies", "tests" ]
+    ignore:
+      - dependency-name: "AWSSDK.*"
+    groups:
+      test-tooling:
+        applies-to: version-updates
+        patterns: [ "*" ]
+        update-types: [ "minor", "patch" ]
+
+  # Compat consumer: its pins are the consumer versions FileParty promises to support.
+  # Never bump them, not even for security. A newer pin would stop proving compatibility.
   - package-ecosystem: "nuget"
-    directory: "/src/FileParty.Providers.FileSystem"
+    directory: "/samples/compat"
     schedule:
       interval: "monthly"
-  - package-ecosystem: "nuget"
-    directory: "/src/FileParty.Providers.AWS.S3"
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+
+  # CI workflows.
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
       interval: "monthly"
+    labels: [ "dependencies", "ci" ]
+    groups:
+      github-actions:
+        patterns: [ "*" ]
