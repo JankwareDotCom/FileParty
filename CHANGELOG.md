@@ -25,6 +25,14 @@ Checked against consumers pinned to AWSSDK.S3 3.7.415.26, AWSSDK.Core 3.7.402.51
 AWSSDK.SecurityToken 3.7.1.199–3.7.400.33, Microsoft.Extensions.DependencyInjection 9.0.10–10.0.12,
 System.Threading.Tasks.Extensions 4.5.4–4.6.3 and Azure.Storage.Blobs 12.13.0, on net48 and net6.0.
 
+### Security
+
+- NuGet audit (direct and transitive dependencies) is clean for every project and build configuration.
+- AWS SDK v4 build/test configuration: the AWSSDK.Core floor is now 4.0.3.3, which fixes
+  [GHSA-9cvc-h2w8-phrp](https://github.com/advisories/GHSA-9cvc-h2w8-phrp) (CVE-2026-22611, low; affects 4.0.0–4.0.3.2).
+  The shipped package's ranges are unchanged. AWSSDK v3.7 is not affected, and v4 consumers choose
+  their own AWSSDK.Core version. Use 4.0.3.3 or later.
+
 ### Build and CI
 
 - SDK pinned to .NET 10 via `global.json`.

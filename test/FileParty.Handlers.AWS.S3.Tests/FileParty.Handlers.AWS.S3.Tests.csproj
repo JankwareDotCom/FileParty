@@ -35,6 +35,8 @@
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug-V4' OR '$(Configuration)' == 'Release-V4'">
     <PackageReference Include="AWSSDK.S3" Version="[4.0.0,5)" />
+    <!-- GHSA-9cvc-h2w8-phrp / CVE-2026-22611: AWSSDK.Core 4.0.0 - 4.0.3.2 is vulnerable. -->
+    <PackageReference Include="AWSSDK.Core" Version="[4.0.3.3,5)" />
   </ItemGroup>
 
   <ItemGroup>
