@@ -33,8 +33,13 @@ public class CredentialFactoryShould
         var storageProviderFactory = sp.GetRequiredService<IAsyncFilePartyFactory>();
         var storageProvider = await storageProviderFactory.GetAsyncStorageProvider();
 
+#if NET
+        await using var inputStream = new MemoryStream();
+        await using var inputWriter = new StreamWriter(inputStream);
+#else
         using var inputStream = new MemoryStream();
         using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;
