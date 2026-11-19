@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net10.0;netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <Description>Agnostic File Storage, AWS S3 Module</Description>
     <PackageProjectUrl>https://github.com/JankwareDotCom/FileParty</PackageProjectUrl>
     <RepositoryUrl>https://github.com/JankwareDotCom/FileParty</RepositoryUrl>
@@ -27,23 +27,32 @@
     <ProjectReference Include="..\FileParty.Core\FileParty.Core.csproj"/>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.*"/>
+  <!-- ValueTask is built into netstandard2.1 / net8.0 / net10.0; only netstandard2.0 needs the package. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4"/>
   </ItemGroup>
 
+  <!--
+    Shipping configuration (Debug/Release): one package that works against AWSSDK v3.7 and v4.
+    Floors stay at or below what existing consumers pin (S3 3.7.415.26, SecurityToken 3.7.1.199, Core 3.7.402.51).
+    AWSSDK packages cap AWSSDK.Core at < 4.0.0 within v3, so v4 consumers must reference AWSSDK.S3 and
+    AWSSDK.SecurityToken 4.x directly.
+  -->
   <ItemGroup Condition="'$(Configuration)' == 'Debug' OR '$(Configuration)' == 'Release'">
     <PackageReference Include="AWSSDK.S3" Version="[3.7.400,5)" IncludeAssets="all" PrivateAssets="compile"/>
-    <PackageReference Include="AWSSDK.SecurityToken" Version="[3.7.400,5)" IncludeAssets="all" PrivateAssets="compile"/>
+    <PackageReference Include="AWSSDK.SecurityToken" Version="[3.7.1,5)" IncludeAssets="all" PrivateAssets="compile"/>
   </ItemGroup>
   
   <ItemGroup Condition="'$(Configuration)' == 'Debug-V3' OR '$(Configuration)' == 'Release-V3'">
     <PackageReference Include="AWSSDK.S3" Version="[3.7.400.1,4)" IncludeAssets="all" PrivateAssets="compile"/>
-    <PackageReference Include="AWSSDK.SecurityToken" Version="[3.7.400,4)" IncludeAssets="all" PrivateAssets="compile"/>
+    <PackageReference Include="AWSSDK.SecurityToken" Version="[3.7.1,4)" IncludeAssets="all" PrivateAssets="compile"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'Debug-V4' OR '$(Configuration)' == 'Release-V4'">
     <PackageReference Include="AWSSDK.S3" Version="[4.0.0,5)" IncludeAssets="all" PrivateAssets="compile"/>
     <PackageReference Include="AWSSDK.SecurityToken" Version="[4.0.0,5)" IncludeAssets="all" PrivateAssets="compile"/>
+    <!-- GHSA-9cvc-h2w8-phrp / CVE-2026-22611: AWSSDK.Core 4.0.0 - 4.0.3.2 is vulnerable. -->
+    <PackageReference Include="AWSSDK.Core" Version="[4.0.3.3,5)" IncludeAssets="all" PrivateAssets="compile"/>
   </ItemGroup>
 
 </Project>

@@ -55,8 +55,13 @@ public class S3StorageProviderShould
             }
         }
 
+#if NET
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
+#else
+        using var inputStream = new MemoryStream();
+        using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;
@@ -87,10 +92,18 @@ public class S3StorageProviderShould
         Assert.Equal(StoredItemType.File, info.StoredType);
         Assert.Equal(StoredItemType.Directory, info2.StoredType);
 
+#if NET
         await using var fileStream = await _asyncStorageProvider.ReadAsync(storagePointer, CancellationToken.None);
+#else
+        using var fileStream = await _asyncStorageProvider.ReadAsync(storagePointer, CancellationToken.None);
+#endif
         Assert.Equal(12 * 1024, fileStream.Length);
 
+#if NET
         await using var ms = new MemoryStream();
+#else
+        using var ms = new MemoryStream();
+#endif
         await fileStream.CopyToAsync(ms);
         var bytes = ms.ToArray();
         _testOutputHelper.WriteLine(bytes.ToString());
@@ -110,8 +123,13 @@ public class S3StorageProviderShould
     [Fact]
     public async Task DeleteEntireDirectory()
     {
+#if NET
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
+#else
+        using var inputStream = new MemoryStream();
+        using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;

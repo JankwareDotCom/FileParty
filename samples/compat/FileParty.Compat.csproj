@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Compatibility smoke test: a consumer on .NET Framework 4.8 and .NET 6 that already pins the
+    dependency versions below must be able to take the new FileParty packages by changing only the
+    FileParty version. Restore/build fails on any downgrade (NU1605), out-of-range dependency (NU1608),
+    or version conflict.
+
+      dotnet build samples/compat -p:CompatProfile=low     (default)
+      dotnet build samples/compat -p:CompatProfile=high
+      dotnet build samples/compat -p:IncludeAzure=true     (needs the Azure nupkg in artifacts/packages)
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <FilePartyVersion Condition="'$(FilePartyVersion)' == ''">2.1.0</FilePartyVersion>
+    <CompatProfile Condition="'$(CompatProfile)' == ''">low</CompatProfile>
+
+    <!-- net6.0 is end-of-life, but consumers still run it; that is the point of this project. -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- The pinned versions below are the consumers' choice; auditing them is not what this test checks. -->
+    <NuGetAudit>false</NuGetAudit>
+    <!-- Microsoft.Extensions.* 9+/10+ warn on net6.0 for the consumer's own pins, independent of FileParty. -->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+
+    <WarningsAsErrors>$(WarningsAsErrors);NU1603;NU1605;NU1608;NU1107;NU1109;NU1701</WarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IncludeAzure)' == 'true'">
+    <DefineConstants>$(DefineConstants);FILEPARTY_AZURE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FileParty.Core" Version="$(FilePartyVersion)" />
+    <PackageReference Include="FileParty.Providers.FileSystem" Version="$(FilePartyVersion)" />
+    <PackageReference Include="FileParty.Providers.AWS.S3" Version="$(FilePartyVersion)" />
+    <PackageReference Include="FileParty.Providers.Azure.Storage" Version="$(FilePartyVersion)" Condition="'$(IncludeAzure)' == 'true'" />
+  </ItemGroup>
+
+  <!-- Versions existing consumers pin today. Exact pins ([x]) so nothing can float upward. -->
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="[3.7.415.26]" />
+    <PackageReference Include="AWSSDK.Core" Version="[3.7.402.51]" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="[12.13.0]" Condition="'$(IncludeAzure)' == 'true'" />
+  </ItemGroup>
+
+  <!-- Low end of the consumer ranges. -->
+  <ItemGroup Condition="'$(CompatProfile)' == 'low'">
+    <PackageReference Include="AWSSDK.SecurityToken" Version="[3.7.1.199]" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="[9.0.10]" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="[4.5.4]" />
+  </ItemGroup>
+
+  <!-- High end of the consumer ranges. -->
+  <ItemGroup Condition="'$(CompatProfile)' == 'high'">
+    <PackageReference Include="AWSSDK.SecurityToken" Version="[3.7.400.33]" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="[10.0.12]" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="[4.6.3]" />
+  </ItemGroup>
+</Project>

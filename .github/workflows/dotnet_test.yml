@@ -6,25 +6,84 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  fileparty_s3_region: ${{ secrets.TEST_S3_REGION }}
+  fileparty_s3_bucket: ${{ secrets.TEST_S3_BUCKET }}
+  fileparty_s3_access_key: ${{ secrets.TEST_S3_ACCESS_KEY }}
+  fileparty_s3_secret_key: ${{ secrets.TEST_S3_SECRET_KEY }}
+  fileparty_s3_role_arn: ${{ secrets.TEST_S3_ROLE_ARN }}
+  fileparty_s3_role_external_id: ${{ secrets.TEST_S3_ROLE_EXTERNAL_ID }}
+
 jobs:
+  # net10.0 tests, then pack with package validation against the live nuget.org releases.
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 10.0.x
-    - name: Test
+        global-json-file: global.json
+    - name: Test (net10.0)
       run: |
         dotnet test test/FileParty.Core.Tests/FileParty.Core.Tests.csproj --configuration Release --verbosity normal
         dotnet test test/FileParty.Handlers.FileSystem.Tests/FileParty.Handlers.FileSystem.Tests.csproj --configuration Release --verbosity normal
         dotnet test test/FileParty.Handlers.AWS.S3.Tests/FileParty.Handlers.AWS.S3.Tests.csproj --configuration Release-V3 --verbosity normal
         dotnet test test/FileParty.Handlers.AWS.S3.Tests/FileParty.Handlers.AWS.S3.Tests.csproj --configuration Release-V4 --verbosity normal
-      env:
-        "fileparty_s3_region": ${{ secrets.TEST_S3_REGION }}
-        "fileparty_s3_bucket": ${{ secrets.TEST_S3_BUCKET }}
-        "fileparty_s3_access_key": ${{ secrets.TEST_S3_ACCESS_KEY }}
-        "fileparty_s3_secret_key": ${{ secrets.TEST_S3_SECRET_KEY }}
-        "fileparty_s3_role_arn": ${{ secrets.TEST_S3_ROLE_ARN }}
-        "fileparty_s3_role_external_id": ${{ secrets.TEST_S3_ROLE_EXTERNAL_ID }}
+    # GeneratePackageOnBuild=false: combining it with `dotnet pack` races and drops the net10.0 dll (NU5026).
+    - name: Pack + validate against 2.0.0 (nuget.org)
+      run: |
+        for p in src/FileParty.Core src/FileParty.Providers.FileSystem src/FileParty.Providers.AWS.S3; do
+          dotnet pack "$p" -c Release -p:GeneratePackageOnBuild=false -o artifacts/packages
+        done
+    - name: Validate against 1.3.0 (nuget.org)
+      run: |
+        # Package validation is incremental and does not re-run when only the baseline changes.
+        rm -f src/*/obj/Release/*ValidatePackage.semaphore
+        for p in src/FileParty.Core src/FileParty.Providers.FileSystem src/FileParty.Providers.AWS.S3; do
+          dotnet pack "$p" -c Release -p:GeneratePackageOnBuild=false -p:PackageValidationBaselineVersion=1.3.0 -o artifacts/validate-1.3.0
+        done
+    - uses: actions/upload-artifact@v4
+      with:
+        name: packages
+        path: artifacts/packages/*.nupkg
+
+  # net48 consumes the netstandard2.0 build, so this runs the suites against that asset.
+  netfx:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+    - name: Test (net48 -> netstandard2.0)
+      shell: bash
+      run: |
+        dotnet test test/FileParty.Core.Tests/FileParty.Core.Tests.csproj --configuration Release -f net48 --verbosity normal
+        dotnet test test/FileParty.Handlers.FileSystem.Tests/FileParty.Handlers.FileSystem.Tests.csproj --configuration Release -f net48 --verbosity normal
+        dotnet test test/FileParty.Handlers.AWS.S3.Tests/FileParty.Handlers.AWS.S3.Tests.csproj --configuration Release-V3 -f net48 --verbosity normal
+
+  # A net48 + net6.0 consumer that already pins older AWS / Microsoft.Extensions versions must restore
+  # and build against the new packages without NU1605/NU1608 or forced upgrades.
+  compat:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [ low, high ]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+    - uses: actions/download-artifact@v4
+      with:
+        name: packages
+        path: artifacts/packages
+    - name: Restore + build compat consumer (${{ matrix.profile }})
+      run: dotnet build samples/compat -p:CompatProfile=${{ matrix.profile }}
