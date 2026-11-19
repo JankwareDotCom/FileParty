@@ -1,0 +1,10 @@
+<Project>
+  <!--
+    Stand-alone on purpose: the compat consumer must not inherit anything from the FileParty build
+    (no Directory.Build.props from src/ or test/), and it restores into its own package folder so a
+    stale FileParty package of the same version in ~/.nuget/packages can never be picked up.
+  -->
+  <PropertyGroup>
+    <RestorePackagesPath>$(MSBuildThisFileDirectory).packages/</RestorePackagesPath>
+  </PropertyGroup>
+</Project>

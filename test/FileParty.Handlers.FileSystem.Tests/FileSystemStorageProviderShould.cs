@@ -82,7 +82,11 @@ public class FileSystemStorageProviderShould : IDisposable
     public async Task DetermineIfFileExists()
     {
         var filePath = $"{Guid.NewGuid()}.txt";
+#if NET
         await using var fs = File.Create(_baseDirectory + filePath);
+#else
+        using var fs = File.Create(_baseDirectory + filePath);
+#endif
         Assert.True(await _asyncStorageProvider.ExistsAsync(filePath));
         Assert.False(await _asyncStorageProvider.ExistsAsync(filePath + "nope"));
 
@@ -107,7 +111,11 @@ public class FileSystemStorageProviderShould : IDisposable
     {
         var filePath = $"{Guid.NewGuid()}.txt";
         var directoryPath = $"{Guid.NewGuid()}";
+#if NET
         await using var fs = File.Create(_baseDirectory + filePath);
+#else
+        using var fs = File.Create(_baseDirectory + filePath);
+#endif
         Directory.CreateDirectory(_baseDirectory + directoryPath);
 
         Assert.NotNull(await _asyncStorageProvider.TryGetStoredItemTypeAsync(filePath));
@@ -120,8 +128,13 @@ public class FileSystemStorageProviderShould : IDisposable
     [Fact]
     public async Task CreateANewFileAndReadIt()
     {
+#if NET
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
+#else
+        using var inputStream = new MemoryStream();
+        using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;
@@ -143,7 +156,11 @@ public class FileSystemStorageProviderShould : IDisposable
 
         Assert.True(await _asyncStorageProvider.ExistsAsync(filePath));
 
+#if NET
         await using var stream = _storageProvider.Read(filePath);
+#else
+        using var stream = _storageProvider.Read(filePath);
+#endif
         using var reader = new StreamReader(stream);
         Assert.Matches(@"\*+", await reader.ReadToEndAsync());
     }
@@ -171,8 +188,13 @@ public class FileSystemStorageProviderShould : IDisposable
     [Fact]
     public async Task FailAtReplacingAFileThatDoesNotExist()
     {
+#if NET
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
+#else
+        using var inputStream = new MemoryStream();
+        using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;
@@ -202,8 +224,13 @@ public class FileSystemStorageProviderShould : IDisposable
     [Fact]
     public async Task ReplaceAFile()
     {
+#if NET
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
+#else
+        using var inputStream = new MemoryStream();
+        using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;
@@ -217,8 +244,13 @@ public class FileSystemStorageProviderShould : IDisposable
             inputStream,
             WriteMode.Create);
 
+#if NET
         await using var replacementStream = new MemoryStream();
         await using var replacementWriter = new StreamWriter(replacementStream);
+#else
+        using var replacementStream = new MemoryStream();
+        using var replacementWriter = new StreamWriter(replacementStream);
+#endif
         await replacementWriter.WriteAsync(new string('x', 12 * 1024)); // 12kb string
         await replacementWriter.FlushAsync();
         replacementStream.Position = 0;
@@ -228,7 +260,11 @@ public class FileSystemStorageProviderShould : IDisposable
             replacementStream,
             WriteMode.Replace);
 
+#if NET
         var fileContents = await File.ReadAllTextAsync(_baseDirectory + filePath);
+#else
+        var fileContents = File.ReadAllText(_baseDirectory + filePath);
+#endif
 
         Assert.True(fileContents.All(x => x == 'x'));
     }
@@ -236,8 +272,13 @@ public class FileSystemStorageProviderShould : IDisposable
     [Fact]
     public async Task FailAtFileReplacementWhenIncorrectWriteMode()
     {
+#if NET
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
+#else
+        using var inputStream = new MemoryStream();
+        using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;
@@ -251,8 +292,13 @@ public class FileSystemStorageProviderShould : IDisposable
             inputStream,
             WriteMode.Create);
 
+#if NET
         await using var replacementStream = new MemoryStream();
         await using var replacementWriter = new StreamWriter(replacementStream);
+#else
+        using var replacementStream = new MemoryStream();
+        using var replacementWriter = new StreamWriter(replacementStream);
+#endif
         await replacementWriter.WriteAsync(new string('x', 12 * 1024)); // 12kb string
         await replacementWriter.FlushAsync();
         replacementStream.Position = 0;
@@ -265,7 +311,11 @@ public class FileSystemStorageProviderShould : IDisposable
                 WriteMode.Create);
         });
 
+#if NET
         var fileContents = await File.ReadAllTextAsync(_baseDirectory + filePath);
+#else
+        var fileContents = File.ReadAllText(_baseDirectory + filePath);
+#endif
 
         Assert.False(fileContents.All(x => x == 'x'));
         Assert.Equal(Errors.FileAlreadyExistsException.Message, error.Message);
@@ -274,8 +324,13 @@ public class FileSystemStorageProviderShould : IDisposable
     [Fact]
     public async Task DeleteAFile()
     {
+#if NET
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
+#else
+        using var inputStream = new MemoryStream();
+        using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;
@@ -330,8 +385,13 @@ public class FileSystemStorageProviderShould : IDisposable
     [Fact]
     public async Task ReturnInformationAboutAFile()
     {
+#if NET
         await using var inputStream = new MemoryStream();
         await using var inputWriter = new StreamWriter(inputStream);
+#else
+        using var inputStream = new MemoryStream();
+        using var inputWriter = new StreamWriter(inputStream);
+#endif
         await inputWriter.WriteAsync(new string('*', 12 * 1024)); // 12kb string
         await inputWriter.FlushAsync();
         inputStream.Position = 0;
@@ -350,8 +410,13 @@ public class FileSystemStorageProviderShould : IDisposable
 
         Thread.Sleep(1000); // for obvious timestamp differences
 
+#if NET
         await using var replacementStream = new MemoryStream();
         await using var replacementWriter = new StreamWriter(replacementStream);
+#else
+        using var replacementStream = new MemoryStream();
+        using var replacementWriter = new StreamWriter(replacementStream);
+#endif
         await replacementWriter.WriteAsync(new string('x', 12 * 1024)); // 12kb string
         await replacementWriter.FlushAsync();
         replacementStream.Position = 0;
