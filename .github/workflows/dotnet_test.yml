@@ -21,9 +21,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
     - name: Test (net10.0)
@@ -45,7 +45,7 @@ jobs:
         for p in src/FileParty.Core src/FileParty.Providers.FileSystem src/FileParty.Providers.AWS.S3; do
           dotnet pack "$p" -c Release -p:GeneratePackageOnBuild=false -p:PackageValidationBaselineVersion=1.3.0 -o artifacts/validate-1.3.0
         done
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: packages
         path: artifacts/packages/*.nupkg
@@ -54,9 +54,9 @@ jobs:
   netfx:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
     - name: Test (net48 -> netstandard2.0)
@@ -76,12 +76,12 @@ jobs:
       matrix:
         profile: [ low, high ]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         global-json-file: global.json
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: packages
         path: artifacts/packages

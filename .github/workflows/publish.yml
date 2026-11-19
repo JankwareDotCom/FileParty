@@ -13,9 +13,9 @@ jobs:
       contents: write   # nuget_publish tags the published commit using GITHUB_TOKEN
       id-token: write   # GitHub OIDC token, exchanged for a nuget.org key below
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       # nuget.org trusted publishing: exchange the GitHub OIDC token for a short-lived (1 hour) API key.
@@ -27,7 +27,7 @@ jobs:
           user: Jankware
       - name: Build and Publish Nuget Packages
         id: csharp_nuget_publish
-        uses: JankwareDotCom/nuget_publish@0.4.0
+        uses: JankwareDotCom/nuget_publish@0.4.1
         with: 
           PROJECT_FILE_PATHS: './src/FileParty.Core/FileParty.Core.csproj,./src/FileParty.Providers.FileSystem/FileParty.Providers.FileSystem.csproj,./src/FileParty.Providers.AWS.S3/FileParty.Providers.AWS.S3.csproj'
           NUGET_SOURCE: ${{secrets.JANKWARE_NUGET_SOURCE}}
