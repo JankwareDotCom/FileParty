@@ -1,0 +1,26 @@
+<Project>
+  <!--
+    Shared settings for the shipped FileParty packages.
+
+    Package validation compares each package against the release already published on nuget.org
+    (the baseline package is downloaded from the live feed) and fails the pack on any API or
+    target-framework break. CI also validates against 1.3.0:
+      dotnet pack -c Release -p:GeneratePackageOnBuild=false -p:PackageValidationBaselineVersion=1.3.0
+  -->
+  <PropertyGroup>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion Condition="'$(PackageValidationBaselineVersion)' == ''">2.0.0</PackageValidationBaselineVersion>
+    <!-- Also validate netstandard2.0 vs net8.0/net10.0 surfaces inside the same package. -->
+    <EnableStrictModeForCompatibleTfms>true</EnableStrictModeForCompatibleTfms>
+  </PropertyGroup>
+
+  <!--
+    1.3.0 shipped a net6.0 asset; 2.0.0 dropped net6.0, so net6.0 consumers now get netstandard2.1.
+    ApiCompat then reports enums "losing" ISpanFormattable (CP0008). That interface comes from System.Enum
+    in the running framework, so nothing changes at runtime. Those known false positives are listed per
+    project in CompatibilitySuppressions.1.3.0.xml and applied only when validating against 1.3.0.
+  -->
+  <ItemGroup Condition="'$(PackageValidationBaselineVersion)' == '1.3.0' AND Exists('$(MSBuildProjectDirectory)/CompatibilitySuppressions.1.3.0.xml')">
+    <ApiCompatSuppressionFile Include="$(MSBuildProjectDirectory)/CompatibilitySuppressions.1.3.0.xml" />
+  </ItemGroup>
+</Project>

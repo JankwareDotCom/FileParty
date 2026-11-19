@@ -1,7 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <!--
+      net48 has no lib asset of its own, so it runs the tests against the netstandard2.0 build.
+      On by default on Windows; elsewhere pass -p:FilePartyTestNetFx=true to compile it (running needs Windows or Mono).
+    -->
+    <FilePartyTestNetFx Condition="'$(FilePartyTestNetFx)' == '' AND '$(OS)' == 'Windows_NT'">true</FilePartyTestNetFx>
+    <TargetFrameworks Condition="'$(FilePartyTestNetFx)' == 'true'">$(TargetFrameworks);net48</TargetFrameworks>
     <Configurations>Debug-V3;Debug-V4;Release-V3;Release-V4</Configurations>
   </PropertyGroup>
 

@@ -8,3 +8,6 @@ riderModule.iml
 *.DotSettings
 *.nupkg
 *.snupkg
+# Local package output and the compat sample's isolated package cache
+/artifacts/
+samples/compat/.packages/
